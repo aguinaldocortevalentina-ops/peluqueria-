@@ -12,6 +12,18 @@
         <h1>Flama Barber</h1>
         <div class="linea-dorada"></div>
         <p class="mensaje">Estilo, precisión y tradición.</p>
+
+        <section class="servicios">
+            <h2>Nuestros servicios</h2>
+            <ul>
+                {% for servicio in servicios %}
+                    <li>
+                        <span>{{ servicio.nombre }}</span>
+                        <strong>${{ "{:,}".format(servicio.precio).replace(",", ".") }}</strong>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
     </main>
 </body>
 </html>

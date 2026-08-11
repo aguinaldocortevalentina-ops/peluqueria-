@@ -54,3 +54,36 @@ h1 {
     margin: 0;
     font-size: 1.1rem;
 }
+
+.servicios {
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--dorado);
+}
+
+.servicios h2 {
+    margin-top: 0;
+    color: var(--dorado);
+    font-family: Georgia, serif;
+}
+
+.servicios ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.servicios li {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 10px 0;
+    padding: 12px 16px;
+    text-align: left;
+    background-color: var(--bordo-oscuro);
+    border-left: 3px solid var(--dorado);
+}
+
+.servicios strong {
+    color: var(--dorado);
+}
