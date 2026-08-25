@@ -87,3 +87,101 @@ h1 {
 .servicios strong {
     color: var(--dorado);
 }
+
+.peluqueros,
+.administracion {
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--dorado);
+}
+
+.peluqueros h2,
+.administracion h2 {
+    color: var(--dorado);
+    font-family: Georgia, serif;
+}
+
+.tarjetas-peluqueros {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 18px;
+}
+
+.tarjeta-peluquero {
+    padding: 22px;
+    background-color: var(--bordo-oscuro);
+    border: 1px solid var(--dorado);
+}
+
+.tarjeta-peluquero img,
+.foto-predeterminada {
+    width: 84px;
+    height: 84px;
+    margin: 0 auto 14px;
+    display: grid;
+    place-items: center;
+    border: 3px solid var(--dorado);
+    border-radius: 50%;
+    object-fit: cover;
+    color: var(--bordo-oscuro);
+    background-color: var(--beige);
+    font-family: Georgia, serif;
+    font-size: 2rem;
+}
+
+.tarjeta-peluquero h3 {
+    margin: 0;
+    color: var(--dorado);
+}
+
+.tarjeta-peluquero p {
+    min-height: 48px;
+    font-size: 0.9rem;
+}
+
+.tarjeta-peluquero a,
+.volver {
+    color: var(--dorado);
+}
+
+.tarjeta-peluquero form {
+    margin-top: 12px;
+}
+
+.administracion {
+    text-align: left;
+}
+
+.administracion form {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--dorado);
+    color: var(--bordo-oscuro);
+    background-color: var(--beige);
+}
+
+.opcion {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.opcion input {
+    width: auto;
+}
+
+button {
+    width: fit-content;
+    padding: 10px 16px;
+    border: 1px solid var(--dorado);
+    color: var(--bordo-oscuro);
+    background-color: var(--dorado);
+    font-weight: bold;
+    cursor: pointer;
+}

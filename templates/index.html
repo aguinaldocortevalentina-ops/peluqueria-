@@ -24,6 +24,59 @@
                 {% endfor %}
             </ul>
         </section>
+
+        <section class="peluqueros">
+            <h2>Elegí tu peluquero</h2>
+            <div class="tarjetas-peluqueros">
+                {% for peluquero in peluqueros %}
+                    <article class="tarjeta-peluquero">
+                        {% if peluquero.foto %}
+                            <img src="{{ peluquero.foto }}" alt="Foto de {{ peluquero.nombre }}">
+                        {% else %}
+                            <div class="foto-predeterminada">{{ peluquero.nombre[0] }}</div>
+                        {% endif %}
+                        <h3>{{ peluquero.nombre }}</h3>
+                        <p>{{ peluquero.especialidades or "Sin especialidades asignadas" }}</p>
+                        <a href="{{ url_for('editar_peluquero', peluquero_id=peluquero.id) }}">Editar</a>
+                        <form action="{{ url_for('eliminar_peluquero', peluquero_id=peluquero.id) }}" method="post">
+                            <button type="submit">Eliminar</button>
+                        </form>
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="administracion">
+            <h2>Administrar peluqueros</h2>
+            <form action="{{ url_for('crear_peluquero') }}" method="post">
+                <label for="nombre-peluquero">Nombre</label>
+                <input id="nombre-peluquero" name="nombre" required>
+
+                <label for="foto-peluquero">Enlace de la foto (opcional)</label>
+                <input id="foto-peluquero" name="foto" type="url">
+
+                <p>Especialidades</p>
+                {% for servicio in servicios %}
+                    <label class="opcion">
+                        <input name="servicios" type="checkbox" value="{{ servicio.id_servicio }}">
+                        {{ servicio.nombre }}
+                    </label>
+                {% endfor %}
+
+                <button type="submit">Guardar peluquero</button>
+            </form>
+
+            <h2>Agregar servicio</h2>
+            <form action="{{ url_for('crear_servicio') }}" method="post">
+                <label for="nombre-servicio">Nombre del servicio</label>
+                <input id="nombre-servicio" name="nombre" required>
+
+                <label for="precio-servicio">Precio general</label>
+                <input id="precio-servicio" name="precio" type="number" min="0" required>
+
+                <button type="submit">Guardar servicio</button>
+            </form>
+        </section>
     </main>
 </body>
 </html>

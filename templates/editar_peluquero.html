@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar peluquero | Flama Barber</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="portada">
+        <h1>Editar peluquero</h1>
+        <section class="administracion">
+            <form method="post">
+                <label for="nombre">Nombre</label>
+                <input id="nombre" name="nombre" value="{{ peluquero.nombre }}" required>
+
+                <label for="foto">Enlace de la foto (opcional)</label>
+                <input id="foto" name="foto" type="url" value="{{ peluquero.foto or '' }}">
+
+                <p>Especialidades</p>
+                {% for servicio in servicios %}
+                    <label class="opcion">
+                        <input name="servicios" type="checkbox" value="{{ servicio.id_servicio }}"
+                            {% if servicio.id_servicio in ids_asignados %}checked{% endif %}>
+                        {{ servicio.nombre }}
+                    </label>
+                {% endfor %}
+
+                <button type="submit">Guardar cambios</button>
+            </form>
+            <a class="volver" href="{{ url_for('inicio') }}">Volver al inicio</a>
+        </section>
+    </main>
+</body>
+</html>
