@@ -12,7 +12,7 @@
         <h1>Elegí la fecha y hora</h1>
         <p class="mensaje">Elegí el momento que prefieras para tu turno.</p>
         <form method="post" class="formulario-reserva">
-            <label for="cliente_nombre">Tu nombre</label>
+            <label for="cliente_nombre">Nombre y apellido</label>
             <input type="text" id="cliente_nombre" name="cliente_nombre" placeholder="Ej: Santiago Gómez" required>
 
             <label for="cliente_telefono">Teléfono / WhatsApp</label>
@@ -32,7 +32,7 @@
                     <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
                 </select>
             </div>
-            <label>Elegí un horario</label>
+            <label>Horario disponible</label>
             <div class="selector-hora">
                 {% for hora in ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00"] %}
                     <label class="hora-opcion"><input name="hora" type="radio" value="{{ hora }}" required><span>{{ hora }}</span></label>
@@ -40,7 +40,7 @@
             </div>
             <div class="navegacion-pasos">
                 <a class="boton-secundario" href="{{ url_for('elegir_servicio') }}">Anterior</a>
-                <button type="submit">Confirmar corte</button>
+                <button type="submit">Confirmar turno</button>
             </div>
         </form>
     </main>

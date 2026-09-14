@@ -1,16 +1,16 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso Administrador | Flama Barber</title>
+    <title>Acceso de Administrador | Flama Barber</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
 <body class="login-body">
     <div class="login-card">
-        <span class="badge">Panel de Control</span>
+        <span class="badge">Panel de control</span>
         <h1>Flama Barber</h1>
-        <p class="subtitulo">Ingresá con tus credenciales de administrador</p>
+        <p class="subtitulo">Ingresá con tus credenciales de administrador.</p>
 
         {% if error %}
             <div class="alerta-error">
@@ -29,7 +29,7 @@
                 <input type="password" id="contrasena" name="contrasena" placeholder="••••••••" required>
             </div>
 
-            <button type="submit" class="boton-admin">Ingresar al Panel</button>
+            <button type="submit" class="boton-admin">Ingresar al panel</button>
         </form>
 
         <a href="{{ url_for('inicio') }}" class="volver-sitio">← Volver al sitio de clientes</a>

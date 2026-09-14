@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -10,12 +10,12 @@
     <header class="admin-header">
         <div class="marca-admin">
             <h2>Flama Barber</h2>
-            <span class="badge-panel">Admin</span>
+            <span class="badge-panel">Panel de control</span>
         </div>
         <div class="admin-usuario-nav">
             <span class="admin-saludo">Hola, <strong>{{ admin_nombre }}</strong></span>
-            <a href="{{ url_for('inicio') }}" target="_blank" class="boton-enlace-sitio">🌐 Ver Sitio Clientes</a>
-            <a href="{{ url_for('admin_logout') }}" class="boton-enlace-logout">Cerrar Sesión</a>
+            <a href="{{ url_for('inicio') }}" target="_blank" class="boton-enlace-sitio">🌐 Ver sitio de clientes</a>
+            <a href="{{ url_for('admin_logout') }}" class="boton-enlace-logout">Cerrar sesión</a>
         </div>
     </header>
 
@@ -25,21 +25,21 @@
             <div class="card-kpi">
                 <div class="kpi-icono">📅</div>
                 <div class="kpi-datos">
-                    <h3>Turnos de Hoy</h3>
+                    <h3>Turnos de hoy</h3>
                     <div class="kpi-valor">{{ turnos_hoy_cont }}</div>
                 </div>
             </div>
             <div class="card-kpi">
                 <div class="kpi-icono">✂️</div>
                 <div class="kpi-datos">
-                    <h3>Turnos en la Semana</h3>
+                    <h3>Turnos de la semana</h3>
                     <div class="kpi-valor">{{ turnos_semana_cont }}</div>
                 </div>
             </div>
             <div class="card-kpi">
                 <div class="kpi-icono">💰</div>
                 <div class="kpi-datos">
-                    <h3>Facturación Estimada</h3>
+                    <h3>Facturación estimada</h3>
                     <div class="kpi-valor">${{ "{:,}".format(facturacion_estimada).replace(",", ".") }}</div>
                 </div>
             </div>
@@ -49,7 +49,7 @@
         <section class="barra-controles">
             <div class="controles-semana">
                 <a href="{{ url_for('admin_agenda', fecha=semana_anterior, peluquero_id=peluquero_id_seleccionado) }}" class="btn-navegacion">
-                    ◀ Semana Anterior
+                    ◀ Semana anterior
                 </a>
                 <a href="{{ url_for('admin_agenda', fecha=hoy_iso, peluquero_id=peluquero_id_seleccionado) }}" class="btn-navegacion btn-hoy">
                     Hoy
@@ -58,15 +58,15 @@
                     Semana: {{ dias_semana[0].fecha_corta }} al {{ dias_semana[-1].fecha_corta }}
                 </span>
                 <a href="{{ url_for('admin_agenda', fecha=semana_siguiente, peluquero_id=peluquero_id_seleccionado) }}" class="btn-navegacion">
-                    Semana Siguiente ▶
+                    Semana siguiente ▶
                 </a>
             </div>
 
             <form method="get" action="{{ url_for('admin_agenda') }}" class="filtro-peluquero-form">
                 <input type="hidden" name="fecha" value="{{ fecha_ref.strftime('%Y-%m-%d') }}">
-                <label for="peluquero_id">Filtrar por Barbero:</label>
+                <label for="peluquero_id">Filtrar por peluquero:</label>
                 <select name="peluquero_id" id="peluquero_id" class="selector-filtro" onchange="this.form.submit()">
-                    <option value="">-- Todos los barberos --</option>
+                    <option value="">-- Todos los peluqueros --</option>
                     {% for p in peluqueros %}
                         <option value="{{ p.id }}" {% if peluquero_id_seleccionado == p.id %}selected{% endif %}>
                             {{ p.nombre }}
@@ -104,12 +104,12 @@
                                         <div class="contenedor-turnos-slot">
                                             {% for t in turnos_slot %}
                                                 <div class="tarjeta-turno estado-{{ t.estado }}"
-                                                     onclick="abrirModalTurno('{{ t.id }}', '{{ t.cliente_nombre or 'Cliente' }}', '{{ t.cliente_telefono or 'Sin teléfono' }}', '{{ t.peluquero_nombre }}', '{{ t.servicio_nombre }}', '{{ t.fecha }}', '{{ t.hora }}', '{{ t.servicio_precio }}', '{{ t.estado }}')">
+                                                     onclick="abrirModalTurno('{{ t.id }}', '{{ t.cliente_nombre or 'Cliente' }}', '{{ t.cliente_telefono or 'Sin teléfono registrado' }}', '{{ t.peluquero_nombre }}', '{{ t.servicio_nombre }}', '{{ t.fecha }}', '{{ t.hora }}', '{{ t.servicio_precio }}', '{{ t.estado }}')">
                                                     <div class="turno-cliente">👤 {{ t.cliente_nombre or 'Cliente' }}</div>
                                                     <div class="turno-servicio">✂️ {{ t.servicio_nombre }}</div>
                                                     <div class="turno-footer">
                                                         <span class="badge-barbero">💈 {{ t.peluquero_nombre }}</span>
-                                                        <span class="badge-estado {{ t.estado }}">{{ t.estado }}</span>
+                                                        <span class="badge-estado {{ t.estado }}">{{ t.estado|capitalize }}</span>
                                                     </div>
                                                 </div>
                                             {% endfor %}
@@ -131,16 +131,16 @@
         <div class="modal-contenido">
             <button class="modal-cerrar" onclick="cerrarModalTurno()">&times;</button>
             <div class="modal-header">
-                <h3>Detalle del Turno</h3>
-                <p class="sub">Revisá y administrá el estado de la reserva</p>
+                <h3>Detalle del turno</h3>
+                <p class="sub">Revisá y administrá el estado de la reserva.</p>
             </div>
 
             <ul class="modal-detalles-lista">
                 <li><span>Cliente:</span> <strong id="mCliente">-</strong></li>
                 <li><span>Teléfono / WhatsApp:</span> <strong id="mTelefono">-</strong></li>
-                <li><span>Barbero / Profesional:</span> <strong id="mBarbero">-</strong></li>
+                <li><span>Peluquero asignado:</span> <strong id="mBarbero">-</strong></li>
                 <li><span>Servicio:</span> <strong id="mServicio">-</strong></li>
-                <li><span>Fecha y Horario:</span> <strong id="mFechaHora">-</strong></li>
+                <li><span>Fecha y hora:</span> <strong id="mFechaHora">-</strong></li>
                 <li><span>Precio del servicio:</span> <strong id="mPrecio">-</strong></li>
                 <li><span>Estado actual:</span> <strong id="mEstado">-</strong></li>
             </ul>
@@ -149,7 +149,7 @@
                 <h4>Cambiar estado:</h4>
                 <form id="formEstado" method="post" action="" class="form-cambiar-estado">
                     <button type="submit" name="estado" value="confirmado" class="btn-estado btn-confirmar">Confirmar</button>
-                    <button type="submit" name="estado" value="completado" class="btn-estado btn-completar">Completado</button>
+                    <button type="submit" name="estado" value="completado" class="btn-estado btn-completar">Completar</button>
                     <button type="submit" name="estado" value="cancelado" class="btn-estado btn-cancelar">Cancelar</button>
                 </form>
             </div>
@@ -166,7 +166,6 @@
             document.getElementById("mPrecio").innerText = "$" + Number(precio).toLocaleString("es-AR");
             document.getElementById("mEstado").innerText = estado.toUpperCase();
 
-            // Configurar acción del formulario
             const form = document.getElementById("formEstado");
             form.action = "/admin/turnos/" + id + "/cambiar-estado";
 

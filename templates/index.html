@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -8,10 +8,10 @@
 </head>
 <body>
     <main class="portada">
-        <p class="detalle">BARBERÃA</p>
+        <p class="detalle">BARBERÍA</p>
         <h1>Flama Barber</h1>
         <div class="linea-dorada"></div>
-        <p class="mensaje">Estilo, precisiÃ³n y tradiciÃ³n.</p>
+        <p class="mensaje">Estilo, precisión y tradición.</p>
         <a class="boton-principal" href="{{ url_for('iniciar_reserva') }}">Reservar turno</a>
 
         <section class="servicios">
@@ -25,8 +25,9 @@
                 {% endfor %}
             </ul>
         </section>
-        <p style="margin-top: 28px; font-size: 0.85rem;"><a href="{{ url_for('admin_agenda') }}" style="color: var(--dorado); text-decoration: none; opacity: 0.85;">🔐 Acceso Administrador</a></p>
+        <p style="margin-top: 28px; font-size: 0.85rem;">
+            <a href="{{ url_for('admin_agenda') }}" style="color: var(--dorado); text-decoration: none; opacity: 0.85;">🔐 Acceso de Administrador</a>
+        </p>
     </main>
 </body>
 </html>
-
