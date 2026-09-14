@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turno confirmado | Flama Barber</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="portada reserva">
+        <p class="detalle">RESERVA COMPLETADA</p>
+        <h1>¡Turno confirmado!</h1>
+        <div class="linea-dorada"></div>
+        <section class="resumen-turno">
+            <p><strong>Peluquero</strong><span>{{ turno.peluquero_nombre }}</span></p>
+            <p><strong>Servicio</strong><span>{{ turno.servicio_nombre }}</span></p>
+            <p><strong>Fecha</strong><span>{{ turno.fecha }}</span></p>
+            <p><strong>Hora</strong><span>{{ turno.hora }}</span></p>
+            <p><strong>Precio</strong><span>${{ "{:,}".format(turno.servicio_precio).replace(",", ".") }}</span></p>
+        </section>
+        <a class="boton-principal" href="{{ url_for('inicio') }}">Volver al inicio</a>
+    </main>
+</body>
+</html>

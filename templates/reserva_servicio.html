@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elegí tu servicio | Flama Barber</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="portada reserva">
+        <p class="detalle">PASO 2 DE 3</p>
+        <h1>Elegí tu servicio</h1>
+        <p class="mensaje">Servicios disponibles con {{ peluquero.nombre }}.</p>
+        <form method="post">
+            <div class="tarjetas-servicios">
+                {% for servicio in servicios %}
+                    <label class="tarjeta-seleccionable servicio-seleccionable">
+                        <input name="servicio_id" type="radio" value="{{ servicio.id_servicio }}" {% if reserva.get('servicio_id') == servicio.id_servicio|string %}checked{% endif %} required>
+                        <strong>{{ servicio.nombre }}</strong>
+                        <small>Servicio personalizado para tu estilo.</small>
+                        <span>${{ "{:,}".format(servicio.precio).replace(",", ".") }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+            <div class="navegacion-pasos">
+                <a class="boton-secundario" href="{{ url_for('elegir_peluquero') }}">Anterior</a>
+                <button type="submit">Siguiente</button>
+            </div>
+        </form>
+    </main>
+</body>
+</html>

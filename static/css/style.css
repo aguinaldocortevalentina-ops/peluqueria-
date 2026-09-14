@@ -87,3 +87,163 @@ h1 {
 .servicios strong {
     color: var(--dorado);
 }
+
+.boton-principal,
+button {
+    display: inline-block;
+    width: fit-content;
+    margin-top: 28px;
+    padding: 12px 20px;
+    border: 1px solid var(--dorado);
+    border-radius: 5px;
+    color: var(--bordo-oscuro);
+    background-color: var(--dorado);
+    font-weight: bold;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.reserva {
+    max-width: 800px;
+}
+
+.tarjetas-peluqueros,
+.tarjetas-servicios {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 16px;
+    margin-top: 30px;
+}
+
+.tarjeta-seleccionable {
+    display: grid;
+    gap: 10px;
+    padding: 22px;
+    border: 1px solid rgba(201, 155, 75, 0.55);
+    border-radius: 8px;
+    background-color: var(--bordo-oscuro);
+    cursor: pointer;
+}
+
+.tarjeta-seleccionable input {
+    position: absolute;
+    opacity: 0;
+}
+
+.tarjeta-seleccionable:has(input:checked) {
+    border-color: var(--dorado);
+    box-shadow: 0 0 0 2px var(--dorado);
+}
+
+.tarjeta-seleccionable strong,
+.tarjeta-seleccionable span {
+    color: var(--dorado);
+    font-size: 1.15rem;
+}
+
+.tarjeta-seleccionable small {
+    line-height: 1.4;
+}
+
+.foto-predeterminada,
+.tarjeta-seleccionable img {
+    width: 72px;
+    height: 72px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--dorado);
+    border-radius: 50%;
+    color: var(--bordo-oscuro);
+    background-color: var(--beige);
+    font-family: Georgia, serif;
+    font-size: 1.8rem;
+    object-fit: cover;
+}
+
+.navegacion-pasos {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 26px;
+}
+
+.boton-secundario {
+    display: inline-block;
+    margin-top: 28px;
+    padding: 12px 20px;
+    border: 1px solid var(--dorado);
+    border-radius: 5px;
+    color: var(--beige);
+    text-decoration: none;
+}
+
+.formulario-reserva {
+    display: grid;
+    gap: 12px;
+    margin-top: 28px;
+    text-align: left;
+}
+
+select {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid var(--dorado);
+    border-radius: 5px;
+    color: var(--bordo-oscuro);
+    background-color: var(--beige);
+}
+
+.selector-fecha {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 10px;
+}
+
+.selector-hora {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+    gap: 8px;
+}
+
+.hora-opcion {
+    position: relative;
+    cursor: pointer;
+}
+
+.hora-opcion input {
+    position: absolute;
+    opacity: 0;
+}
+
+.hora-opcion span {
+    display: block;
+    padding: 10px 6px;
+    border: 1px solid var(--dorado);
+    border-radius: 5px;
+    text-align: center;
+    color: var(--beige);
+    background-color: var(--bordo-oscuro);
+}
+
+.hora-opcion input:checked + span {
+    color: var(--bordo-oscuro);
+    background-color: var(--dorado);
+}
+
+.resumen-turno {
+    margin: 32px 0;
+    padding: 20px;
+    border: 1px solid var(--dorado);
+    text-align: left;
+}
+
+.resumen-turno p {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin: 12px 0;
+}
+
+.resumen-turno span {
+    color: var(--dorado);
+}
