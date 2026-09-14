@@ -12,6 +12,12 @@
         <h1>Elegí la fecha y hora</h1>
         <p class="mensaje">Elegí el momento que prefieras para tu turno.</p>
         <form method="post" class="formulario-reserva">
+            <label for="cliente_nombre">Tu nombre</label>
+            <input type="text" id="cliente_nombre" name="cliente_nombre" placeholder="Ej: Santiago Gómez" required>
+
+            <label for="cliente_telefono">Teléfono / WhatsApp</label>
+            <input type="tel" id="cliente_telefono" name="cliente_telefono" placeholder="Ej: 11 2345 6789" required>
+
             <label>Fecha</label>
             <div class="selector-fecha">
                 <select name="dia" aria-label="Día" required>

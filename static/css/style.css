@@ -184,13 +184,17 @@ button {
     text-align: left;
 }
 
-select {
+select,
+input[type="text"],
+input[type="tel"] {
     width: 100%;
     padding: 11px;
     border: 1px solid var(--dorado);
     border-radius: 5px;
     color: var(--bordo-oscuro);
     background-color: var(--beige);
+    font-size: 1rem;
+    box-sizing: border-box;
 }
 
 .selector-fecha {
