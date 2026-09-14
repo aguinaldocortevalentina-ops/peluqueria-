@@ -1,6 +1,9 @@
-import sqlite3
+﻿import sqlite3
+from datetime import date, datetime, timedelta
+from functools import wraps
 
 from flask import Flask, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 app = Flask(__name__)
@@ -19,6 +22,13 @@ ESPECIALIDADES_INICIALES = {
     "Miriam": ["Tintura", "Corte", "Corte clásico"],
     "Alexander": ["Corte", "Corte + ceja", "Corte clásico"]
 }
+
+HORARIOS = [
+    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+    "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
+    "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
+    "18:00", "18:30", "19:00", "19:30", "20:00"
+]
 
 
 def obtener_conexion():
@@ -64,11 +74,36 @@ def crear_base_de_datos():
             servicio_id INTEGER NOT NULL,
             fecha TEXT NOT NULL,
             hora TEXT NOT NULL,
+            cliente_nombre TEXT DEFAULT 'Cliente',
+            cliente_telefono TEXT DEFAULT '',
             estado TEXT NOT NULL DEFAULT 'pendiente',
             FOREIGN KEY (peluquero_id) REFERENCES peluqueros (id),
             FOREIGN KEY (servicio_id) REFERENCES servicios (id_servicio)
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS administradores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario TEXT NOT NULL UNIQUE,
+            contrasena_hash TEXT NOT NULL,
+            nombre TEXT NOT NULL
+        )
+    """)
+
+    # Migración retrocompatible para columnas en tabla turnos existente
+    columnas_turnos = [col["name"] for col in cursor.execute("PRAGMA table_info(turnos)").fetchall()]
+    if "cliente_nombre" not in columnas_turnos:
+        cursor.execute("ALTER TABLE turnos ADD COLUMN cliente_nombre TEXT DEFAULT 'Cliente'")
+    if "cliente_telefono" not in columnas_turnos:
+        cursor.execute("ALTER TABLE turnos ADD COLUMN cliente_telefono TEXT DEFAULT ''")
+
+    # Administrador por defecto (admin / admin123)
+    admin_existente = cursor.execute("SELECT id FROM administradores WHERE usuario = ?", ("admin",)).fetchone()
+    if not admin_existente:
+        cursor.execute("""
+            INSERT INTO administradores (usuario, contrasena_hash, nombre)
+            VALUES (?, ?, ?)
+        """, ("admin", generate_password_hash("admin123"), "Admin Flama Barber"))
 
     for servicio in SERVICIOS_INICIALES:
         cursor.execute("""
@@ -110,6 +145,20 @@ def obtener_peluqueros():
     conexion.close()
     return peluqueros
 
+
+def admin_requerido(f):
+    """Decorador para proteger rutas exclusivas de administración."""
+    @wraps(f)
+    def decorada(*args, **kwargs):
+        if not session.get("admin_id"):
+            return redirect(url_for("admin_login"))
+        return f(*args, **kwargs)
+    return decorada
+
+
+# =====================================================================
+# RUTAS DE CLIENTES
+# =====================================================================
 
 @app.get("/")
 def inicio():
@@ -164,7 +213,7 @@ def elegir_servicio():
 
 @app.route("/reservar/fecha-hora", methods=["GET", "POST"])
 def elegir_fecha_hora():
-    """Permite elegir fecha y hora y guarda el turno al confirmar."""
+    """Permite elegir fecha, hora y datos del cliente; guarda el turno al confirmar."""
     reserva = session.get("reserva")
     if not reserva or not reserva.get("servicio_id"):
         return redirect(url_for("elegir_servicio"))
@@ -172,12 +221,15 @@ def elegir_fecha_hora():
     if request.method == "POST":
         fecha = f"{request.form['dia']}/{request.form['mes']}"
         hora = request.form["hora"]
+        cliente_nombre = request.form.get("cliente_nombre", "Cliente").strip() or "Cliente"
+        cliente_telefono = request.form.get("cliente_telefono", "").strip()
+
         conexion = obtener_conexion()
         cursor = conexion.cursor()
         cursor.execute("""
-            INSERT INTO turnos (peluquero_id, servicio_id, fecha, hora)
-            VALUES (?, ?, ?, ?)
-        """, (reserva["peluquero_id"], reserva["servicio_id"], fecha, hora))
+            INSERT INTO turnos (peluquero_id, servicio_id, fecha, hora, cliente_nombre, cliente_telefono)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (reserva["peluquero_id"], reserva["servicio_id"], fecha, hora, cliente_nombre, cliente_telefono))
         turno_id = cursor.lastrowid
         conexion.commit()
         conexion.close()
@@ -193,6 +245,7 @@ def confirmacion_turno(turno_id):
     conexion = obtener_conexion()
     turno = conexion.execute("""
         SELECT turnos.fecha, turnos.hora, turnos.estado,
+               turnos.cliente_nombre, turnos.cliente_telefono,
                peluqueros.nombre AS peluquero_nombre,
                servicios.nombre AS servicio_nombre, servicios.precio AS servicio_precio
         FROM turnos
@@ -202,6 +255,160 @@ def confirmacion_turno(turno_id):
     """, (turno_id,)).fetchone()
     conexion.close()
     return render_template("confirmacion_turno.html", turno=turno)
+
+
+# =====================================================================
+# RUTAS DE ADMINISTRACIÓN
+# =====================================================================
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    """Inicio de sesión seguro para el administrador."""
+    if session.get("admin_id"):
+        return redirect(url_for("admin_agenda"))
+
+    error = None
+    if request.method == "POST":
+        usuario = request.form.get("usuario", "").strip()
+        contrasena = request.form.get("contrasena", "")
+
+        conexion = obtener_conexion()
+        admin = conexion.execute(
+            "SELECT * FROM administradores WHERE usuario = ?", (usuario,)
+        ).fetchone()
+        conexion.close()
+
+        if admin and check_password_hash(admin["contrasena_hash"], contrasena):
+            session["admin_id"] = admin["id"]
+            session["admin_nombre"] = admin["nombre"]
+            return redirect(url_for("admin_agenda"))
+        else:
+            error = "Usuario o contraseña incorrectos."
+
+    return render_template("admin/login.html", error=error)
+
+
+@app.get("/admin/logout")
+def admin_logout():
+    """Cierra la sesión del administrador."""
+    session.pop("admin_id", None)
+    session.pop("admin_nombre", None)
+    return redirect(url_for("admin_login"))
+
+
+@app.get("/admin/agenda")
+@admin_requerido
+def admin_agenda():
+    """Panel de control con agenda semanal interactiva y métricas clave."""
+    fecha_param = request.args.get("fecha")
+    try:
+        if fecha_param:
+            fecha_ref = datetime.strptime(fecha_param, "%Y-%m-%d").date()
+        else:
+            fecha_ref = date.today()
+    except ValueError:
+        fecha_ref = date.today()
+
+    inicio_semana = fecha_ref - timedelta(days=fecha_ref.weekday())
+    semana_anterior = (inicio_semana - timedelta(days=7)).strftime("%Y-%m-%d")
+    semana_siguiente = (inicio_semana + timedelta(days=7)).strftime("%Y-%m-%d")
+    hoy_iso = date.today().strftime("%Y-%m-%d")
+
+    nombres_dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
+    dias_semana = []
+    fechas_cortas = []
+    for i in range(6):
+        dia_d = inicio_semana + timedelta(days=i)
+        fc = dia_d.strftime("%d/%m")
+        fechas_cortas.append(fc)
+        dias_semana.append({
+            "nombre": nombres_dias[i],
+            "fecha_corta": fc,
+            "es_hoy": dia_d == date.today(),
+            "dia_numero": dia_d.day,
+            "mes_numero": dia_d.strftime("%m")
+        })
+
+    peluquero_id_str = request.args.get("peluquero_id", "")
+    peluquero_id = int(peluquero_id_str) if peluquero_id_str.isdigit() else None
+
+    conexion = obtener_conexion()
+    peluqueros = conexion.execute("SELECT id, nombre FROM peluqueros ORDER BY nombre").fetchall()
+
+    placeholders = ",".join("?" for _ in fechas_cortas)
+    query = f"""
+        SELECT turnos.id, turnos.peluquero_id, turnos.servicio_id, turnos.fecha, turnos.hora,
+               turnos.estado, turnos.cliente_nombre, turnos.cliente_telefono,
+               peluqueros.nombre AS peluquero_nombre,
+               servicios.nombre AS servicio_nombre, servicios.precio AS servicio_precio
+        FROM turnos
+        INNER JOIN peluqueros ON peluqueros.id = turnos.peluquero_id
+        INNER JOIN servicios ON servicios.id_servicio = turnos.servicio_id
+        WHERE turnos.fecha IN ({placeholders})
+    """
+    params = list(fechas_cortas)
+    if peluquero_id:
+        query += " AND turnos.peluquero_id = ?"
+        params.append(peluquero_id)
+    query += " ORDER BY turnos.hora ASC"
+
+    turnos_semana = conexion.execute(query, params).fetchall()
+
+    agenda_matriz = {fc: {h: [] for h in HORARIOS} for fc in fechas_cortas}
+
+    fecha_hoy_corta = date.today().strftime("%d/%m")
+    turnos_hoy_cont = 0
+    turnos_semana_cont = 0
+    facturacion_estimada = 0
+
+    for t in turnos_semana:
+        fc = t["fecha"]
+        h = t["hora"]
+        if fc in agenda_matriz and h in agenda_matriz[fc]:
+            agenda_matriz[fc][h].append(t)
+        if t["estado"] != "cancelado":
+            turnos_semana_cont += 1
+            facturacion_estimada += t["servicio_precio"]
+            if fc == fecha_hoy_corta:
+                turnos_hoy_cont += 1
+
+    conexion.close()
+
+    return render_template(
+        "admin/agenda.html",
+        dias_semana=dias_semana,
+        horarios=HORARIOS,
+        agenda_matriz=agenda_matriz,
+        peluqueros=peluqueros,
+        peluquero_id_seleccionado=peluquero_id,
+        inicio_semana=inicio_semana,
+        semana_anterior=semana_anterior,
+        semana_siguiente=semana_siguiente,
+        hoy_iso=hoy_iso,
+        fecha_ref=fecha_ref,
+        turnos_hoy_cont=turnos_hoy_cont,
+        turnos_semana_cont=turnos_semana_cont,
+        facturacion_estimada=facturacion_estimada,
+        admin_nombre=session.get("admin_nombre", "Administrador")
+    )
+
+
+@app.post("/admin/turnos/<int:turno_id>/cambiar-estado")
+@admin_requerido
+def cambiar_estado_turno(turno_id):
+    """Permite al administrador cambiar el estado de un turno (confirmado, completado, cancelado)."""
+    nuevo_estado = request.form.get("estado")
+    estados_validos = ["pendiente", "confirmado", "completado", "cancelado"]
+    if nuevo_estado in estados_validos:
+        conexion = obtener_conexion()
+        conexion.execute(
+            "UPDATE turnos SET estado = ? WHERE id = ?", (nuevo_estado, turno_id)
+        )
+        conexion.commit()
+        conexion.close()
+
+    retorno = request.referrer or url_for("admin_agenda")
+    return redirect(retorno)
 
 
 crear_base_de_datos()
