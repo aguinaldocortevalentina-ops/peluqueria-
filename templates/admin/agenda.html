@@ -1,0 +1,193 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Semanal | Flama Barber Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+    <header class="admin-header">
+        <div class="marca-admin">
+            <h2>Flama Barber</h2>
+            <span class="badge-panel">Admin</span>
+        </div>
+        <div class="admin-usuario-nav">
+            <span class="admin-saludo">Hola, <strong>{{ admin_nombre }}</strong></span>
+            <a href="{{ url_for('inicio') }}" target="_blank" class="boton-enlace-sitio">🌐 Ver Sitio Clientes</a>
+            <a href="{{ url_for('admin_logout') }}" class="boton-enlace-logout">Cerrar Sesión</a>
+        </div>
+    </header>
+
+    <main class="admin-contenedor">
+        <!-- SECCIÓN DE MÉTRICAS / KPIS -->
+        <section class="grid-kpis">
+            <div class="card-kpi">
+                <div class="kpi-icono">📅</div>
+                <div class="kpi-datos">
+                    <h3>Turnos de Hoy</h3>
+                    <div class="kpi-valor">{{ turnos_hoy_cont }}</div>
+                </div>
+            </div>
+            <div class="card-kpi">
+                <div class="kpi-icono">✂️</div>
+                <div class="kpi-datos">
+                    <h3>Turnos en la Semana</h3>
+                    <div class="kpi-valor">{{ turnos_semana_cont }}</div>
+                </div>
+            </div>
+            <div class="card-kpi">
+                <div class="kpi-icono">💰</div>
+                <div class="kpi-datos">
+                    <h3>Facturación Estimada</h3>
+                    <div class="kpi-valor">${{ "{:,}".format(facturacion_estimada).replace(",", ".") }}</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BARRA DE NAVEGACIÓN SEMANAL Y FILTRO -->
+        <section class="barra-controles">
+            <div class="controles-semana">
+                <a href="{{ url_for('admin_agenda', fecha=semana_anterior, peluquero_id=peluquero_id_seleccionado) }}" class="btn-navegacion">
+                    ◀ Semana Anterior
+                </a>
+                <a href="{{ url_for('admin_agenda', fecha=hoy_iso, peluquero_id=peluquero_id_seleccionado) }}" class="btn-navegacion btn-hoy">
+                    Hoy
+                </a>
+                <span class="etiqueta-semana">
+                    Semana: {{ dias_semana[0].fecha_corta }} al {{ dias_semana[-1].fecha_corta }}
+                </span>
+                <a href="{{ url_for('admin_agenda', fecha=semana_siguiente, peluquero_id=peluquero_id_seleccionado) }}" class="btn-navegacion">
+                    Semana Siguiente ▶
+                </a>
+            </div>
+
+            <form method="get" action="{{ url_for('admin_agenda') }}" class="filtro-peluquero-form">
+                <input type="hidden" name="fecha" value="{{ fecha_ref.strftime('%Y-%m-%d') }}">
+                <label for="peluquero_id">Filtrar por Barbero:</label>
+                <select name="peluquero_id" id="peluquero_id" class="selector-filtro" onchange="this.form.submit()">
+                    <option value="">-- Todos los barberos --</option>
+                    {% for p in peluqueros %}
+                        <option value="{{ p.id }}" {% if peluquero_id_seleccionado == p.id %}selected{% endif %}>
+                            {{ p.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </section>
+
+        <!-- GRILLA SEMANAL DE TURNOS (MATRIZ INTERACTIVA) -->
+        <div class="agenda-wrapper">
+            <table class="tabla-agenda">
+                <thead>
+                    <tr>
+                        <th class="columna-hora-header">Horario</th>
+                        {% for dia in dias_semana %}
+                            <th class="th-dia {% if dia.es_hoy %}dia-hoy{% endif %}">
+                                <div class="dia-titulo">{{ dia.nombre }}</div>
+                                <div class="dia-fecha">{{ dia.fecha_corta }}</div>
+                                {% if dia.es_hoy %}
+                                    <span class="badge-hoy">HOY</span>
+                                {% endif %}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hora in horarios %}
+                        <tr>
+                            <td class="td-hora">{{ hora }}</td>
+                            {% for dia in dias_semana %}
+                                {% set turnos_slot = agenda_matriz[dia.fecha_corta][hora] %}
+                                <td class="td-slot">
+                                    {% if turnos_slot %}
+                                        <div class="contenedor-turnos-slot">
+                                            {% for t in turnos_slot %}
+                                                <div class="tarjeta-turno estado-{{ t.estado }}"
+                                                     onclick="abrirModalTurno('{{ t.id }}', '{{ t.cliente_nombre or 'Cliente' }}', '{{ t.cliente_telefono or 'Sin teléfono' }}', '{{ t.peluquero_nombre }}', '{{ t.servicio_nombre }}', '{{ t.fecha }}', '{{ t.hora }}', '{{ t.servicio_precio }}', '{{ t.estado }}')">
+                                                    <div class="turno-cliente">👤 {{ t.cliente_nombre or 'Cliente' }}</div>
+                                                    <div class="turno-servicio">✂️ {{ t.servicio_nombre }}</div>
+                                                    <div class="turno-footer">
+                                                        <span class="badge-barbero">💈 {{ t.peluquero_nombre }}</span>
+                                                        <span class="badge-estado {{ t.estado }}">{{ t.estado }}</span>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="slot-vacio">Libre</div>
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- MODAL DE DETALLE Y CAMBIO DE ESTADO -->
+    <div id="modalTurno" class="modal-overlay" onclick="cerrarModalAfuera(event)">
+        <div class="modal-contenido">
+            <button class="modal-cerrar" onclick="cerrarModalTurno()">&times;</button>
+            <div class="modal-header">
+                <h3>Detalle del Turno</h3>
+                <p class="sub">Revisá y administrá el estado de la reserva</p>
+            </div>
+
+            <ul class="modal-detalles-lista">
+                <li><span>Cliente:</span> <strong id="mCliente">-</strong></li>
+                <li><span>Teléfono / WhatsApp:</span> <strong id="mTelefono">-</strong></li>
+                <li><span>Barbero / Profesional:</span> <strong id="mBarbero">-</strong></li>
+                <li><span>Servicio:</span> <strong id="mServicio">-</strong></li>
+                <li><span>Fecha y Horario:</span> <strong id="mFechaHora">-</strong></li>
+                <li><span>Precio del servicio:</span> <strong id="mPrecio">-</strong></li>
+                <li><span>Estado actual:</span> <strong id="mEstado">-</strong></li>
+            </ul>
+
+            <div class="modal-acciones">
+                <h4>Cambiar estado:</h4>
+                <form id="formEstado" method="post" action="" class="form-cambiar-estado">
+                    <button type="submit" name="estado" value="confirmado" class="btn-estado btn-confirmar">Confirmar</button>
+                    <button type="submit" name="estado" value="completado" class="btn-estado btn-completar">Completado</button>
+                    <button type="submit" name="estado" value="cancelado" class="btn-estado btn-cancelar">Cancelar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function abrirModalTurno(id, cliente, telefono, barbero, servicio, fecha, hora, precio, estado) {
+            document.getElementById("mCliente").innerText = cliente;
+            document.getElementById("mTelefono").innerText = telefono;
+            document.getElementById("mBarbero").innerText = barbero;
+            document.getElementById("mServicio").innerText = servicio;
+            document.getElementById("mFechaHora").innerText = fecha + " a las " + hora + " hs";
+            document.getElementById("mPrecio").innerText = "$" + Number(precio).toLocaleString("es-AR");
+            document.getElementById("mEstado").innerText = estado.toUpperCase();
+
+            // Configurar acción del formulario
+            const form = document.getElementById("formEstado");
+            form.action = "/admin/turnos/" + id + "/cambiar-estado";
+
+            document.getElementById("modalTurno").classList.add("activo");
+        }
+
+        function cerrarModalTurno() {
+            document.getElementById("modalTurno").classList.remove("activo");
+        }
+
+        function cerrarModalAfuera(event) {
+            if (event.target.id === "modalTurno") {
+                cerrarModalTurno();
+            }
+        }
+
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "Escape") {
+                cerrarModalTurno();
+            }
+        });
+    </script>
+</body>
+</html>
