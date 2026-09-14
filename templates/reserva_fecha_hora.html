@@ -11,33 +11,58 @@
         <p class="detalle">PASO 3 DE 3</p>
         <h1>Elegí la fecha y hora</h1>
         <p class="mensaje">Elegí el momento que prefieras para tu turno.</p>
+
+        {% if error %}
+            <div class="alerta-error">
+                <strong>Error:</strong> {{ error }}
+            </div>
+        {% endif %}
+
         <form method="post" class="formulario-reserva">
             <label for="cliente_nombre">Nombre y apellido</label>
-            <input type="text" id="cliente_nombre" name="cliente_nombre" placeholder="Ej: Santiago Gómez" required>
+            <input type="text"
+                   id="cliente_nombre"
+                   name="cliente_nombre"
+                   placeholder="Ej: Santiago Gómez"
+                   value="{{ cliente_nombre or '' }}"
+                   required>
 
             <label for="cliente_telefono">Teléfono / WhatsApp</label>
-            <input type="tel" id="cliente_telefono" name="cliente_telefono" placeholder="Ej: 11 2345 6789" required>
+            <input type="tel"
+                   id="cliente_telefono"
+                   name="cliente_telefono"
+                   placeholder="Ej: 3512345678"
+                   pattern="[0-9]{10}"
+                   minlength="10"
+                   maxlength="10"
+                   inputmode="numeric"
+                   title="El número de teléfono debe tener exactamente 10 dígitos."
+                   value="{{ cliente_telefono or '' }}"
+                   required>
+            <small class="ayuda-campo">Ingresá 10 dígitos numéricos (ej: 3512345678).</small>
 
-            <label>Fecha</label>
-            <div class="selector-fecha">
-                <select name="dia" aria-label="Día" required>
-                    <option value="">Día</option>
-                    {% for dia in range(1, 32) %}<option value="{{ '%02d'|format(dia) }}">{{ dia }}</option>{% endfor %}
-                </select>
-                <select name="mes" aria-label="Mes" required>
-                    <option value="">Mes</option>
-                    <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
-                    <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
-                    <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
-                    <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
-                </select>
-            </div>
+            <label for="fecha">Fecha</label>
+            <input type="date"
+                   id="fecha"
+                   name="fecha"
+                   min="{{ fecha_minima }}"
+                   value="{{ fecha_seleccionada or fecha_minima }}"
+                   required>
+
             <label>Horario disponible</label>
             <div class="selector-hora">
                 {% for hora in ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00"] %}
-                    <label class="hora-opcion"><input name="hora" type="radio" value="{{ hora }}" required><span>{{ hora }}</span></label>
+                    <label class="hora-opcion">
+                        <input name="hora"
+                               type="radio"
+                               value="{{ hora }}"
+                               {% if (hora_seleccionada or '') == hora %}checked{% endif %}
+                               required>
+                        <span>{{ hora }}</span>
+                    </label>
                 {% endfor %}
             </div>
+
             <div class="navegacion-pasos">
                 <a class="boton-secundario" href="{{ url_for('elegir_servicio') }}">Anterior</a>
                 <button type="submit">Confirmar turno</button>

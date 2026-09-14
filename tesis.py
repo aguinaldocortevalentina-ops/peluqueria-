@@ -213,30 +213,100 @@ def elegir_servicio():
 
 @app.route("/reservar/fecha-hora", methods=["GET", "POST"])
 def elegir_fecha_hora():
-    """Permite elegir fecha, hora y datos del cliente; guarda el turno al confirmar."""
+    """Permite elegir fecha, hora y datos del cliente; valida los datos y guarda el turno."""
     reserva = session.get("reserva")
     if not reserva or not reserva.get("servicio_id"):
         return redirect(url_for("elegir_servicio"))
 
+    fecha_minima = date.today().strftime("%Y-%m-%d")
+
     if request.method == "POST":
-        fecha = f"{request.form['dia']}/{request.form['mes']}"
-        hora = request.form["hora"]
+        hora = request.form.get("hora", "").strip()
         cliente_nombre = request.form.get("cliente_nombre", "Cliente").strip() or "Cliente"
         cliente_telefono = request.form.get("cliente_telefono", "").strip()
+        fecha_str = request.form.get("fecha", "").strip()
+
+        # 1. Validación del número de teléfono (exactamente 10 dígitos)
+        if not (cliente_telefono.isdigit() and len(cliente_telefono) == 10):
+            error = "El número de teléfono debe tener exactamente 10 dígitos."
+            return render_template(
+                "reserva_fecha_hora.html",
+                error=error,
+                fecha_minima=fecha_minima,
+                cliente_nombre=cliente_nombre,
+                cliente_telefono=cliente_telefono,
+                fecha_seleccionada=fecha_str or fecha_minima,
+                hora_seleccionada=hora
+            ), 400
+
+        # 2. Validación de la fecha del turno
+        fecha_obj = None
+        if fecha_str:
+            try:
+                fecha_obj = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+
+        if not fecha_obj:
+            dia = request.form.get("dia")
+            mes = request.form.get("mes")
+            if dia and mes:
+                try:
+                    fecha_obj = date(date.today().year, int(mes), int(dia))
+                except ValueError:
+                    pass
+
+        if not fecha_obj:
+            error = "Por favor, seleccioná una fecha válida."
+            return render_template(
+                "reserva_fecha_hora.html",
+                error=error,
+                fecha_minima=fecha_minima,
+                cliente_nombre=cliente_nombre,
+                cliente_telefono=cliente_telefono,
+                fecha_seleccionada=fecha_str or fecha_minima,
+                hora_seleccionada=hora
+            ), 400
+
+        if fecha_obj < date.today():
+            error = "No se puede reservar un turno para una fecha que ya pasó."
+            return render_template(
+                "reserva_fecha_hora.html",
+                error=error,
+                fecha_minima=fecha_minima,
+                cliente_nombre=cliente_nombre,
+                cliente_telefono=cliente_telefono,
+                fecha_seleccionada=fecha_str or fecha_minima,
+                hora_seleccionada=hora
+            ), 400
+
+        if not hora:
+            error = "Por favor, seleccioná un horario para tu turno."
+            return render_template(
+                "reserva_fecha_hora.html",
+                error=error,
+                fecha_minima=fecha_minima,
+                cliente_nombre=cliente_nombre,
+                cliente_telefono=cliente_telefono,
+                fecha_seleccionada=fecha_str or fecha_minima,
+                hora_seleccionada=hora
+            ), 400
+
+        fecha_formateada = fecha_obj.strftime("%d/%m")
 
         conexion = obtener_conexion()
         cursor = conexion.cursor()
         cursor.execute("""
             INSERT INTO turnos (peluquero_id, servicio_id, fecha, hora, cliente_nombre, cliente_telefono)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, (reserva["peluquero_id"], reserva["servicio_id"], fecha, hora, cliente_nombre, cliente_telefono))
+        """, (reserva["peluquero_id"], reserva["servicio_id"], fecha_formateada, hora, cliente_nombre, cliente_telefono))
         turno_id = cursor.lastrowid
         conexion.commit()
         conexion.close()
         session.pop("reserva", None)
         return redirect(url_for("confirmacion_turno", turno_id=turno_id))
 
-    return render_template("reserva_fecha_hora.html")
+    return render_template("reserva_fecha_hora.html", fecha_minima=fecha_minima)
 
 
 @app.get("/turnos/<int:turno_id>/confirmacion")
