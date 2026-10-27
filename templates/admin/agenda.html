@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Semanal | Flama Barber Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+    <header class="admin-header">
+        <div class="marca-admin">
+            <h2>Flama Barber</h2>
+            <span class="badge-panel">Panel de control</span>
+        </div>
+        <div class="admin-usuario-nav">
+            <span class="admin-saludo">Hola, <strong>{{ admin_nombre }}</strong></span>
+            <a href="#seccion-historial" class="boton-enlace-sitio">📜 Historial</a>
+            <a href="#seccion-peluqueros" class="boton-enlace-sitio">💈 Peluqueros</a>
+            <a href="{{ url_for('inicio') }}" target="_blank" class="boton-enlace-sitio">🌐 Ver sitio</a>
+            <a href="{{ url_for('admin_logout') }}" class="boton-enlace-logout">Cerrar sesión</a>
+        </div>
+    </header>
+
+    <main class="admin-contenedor">
+        <!-- SECCIÓN DE MÉTRICAS / KPIS (DASHBOARD) -->
+        <section class="grid-kpis">
+            <div class="card-kpi">
+                <div class="kpi-icono">📅</div>
+                <div class="kpi-datos">
+                    <h3>TURNOS DE HOY</h3>
+                    <div class="kpi-valor">{{ turnos_hoy_kpi }}</div>
+                </div>
+            </div>
+            <div class="card-kpi">
+                <div class="kpi-icono">⏳</div>
+                <div class="kpi-datos">
+                    <h3>PENDIENTES</h3>
+                    <div class="kpi-valor">{{ turnos_pendientes_kpi }}</div>
+                </div>
+            </div>
+            <div class="card-kpi">
+                <div class="kpi-icono">✅</div>
+                <div class="kpi-datos">
+                    <h3>COMPLETADOS</h3>
+                    <div class="kpi-valor">{{ turnos_completados_kpi }}</div>
+                </div>
+            </div>
+            <div class="card-kpi">
+                <div class="kpi-icono">❌</div>
+                <div class="kpi-datos">
+                    <h3>CANCELADOS</h3>
+                    <div class="kpi-valor">{{ turnos_cancelados_kpi }}</div>
+                </div>
+            </div>
+        </section>
+
+        
+        <!-- SECCIÓN: ESTADO DE LA BARBERÍA -->
+        <section class="card-estado-barberia">
+            <div class="estado-barberia-info">
+                <div class="estado-indicador-wrapper">
+                    <span class="estado-titulo">Estado de la barbería:</span>
+                    {% if barberia_activa %}
+                        <span class="badge-barberia-estado activa">🟢 Barbería activa</span>
+                    {% else %}
+                        <span class="badge-barberia-estado inactiva">🔴 Barbería inactiva</span>
+                    {% endif %}
+                </div>
+                <p class="estado-barberia-desc">
+                    {% if barberia_activa %}
+                        La barbería está abierta. Los clientes pueden ver los servicios y reservar turnos con normalidad.
+                    {% else %}
+                        La barbería está cerrada temporalmente. Los clientes verán el mensaje de cierre y no podrán reservar.
+                    {% endif %}
+                </p>
+            </div>
+            <form method="post" action="{{ url_for('admin_toggle_barberia') }}" class="form-toggle-barberia">
+                {% if barberia_activa %}
+                    <button type="submit" class="btn-accion-barberia btn-desactivar" onclick="return confirm('¿Querés desactivar la barbería? Los clientes no podrán reservar turnos hasta que la reactives.');">
+                        🔴 Desactivar barbería
+                    </button>
+                {% else %}
+                    <button type="submit" class="btn-accion-barberia btn-activar">
+                        🟢 Activar barbería
+                    </button>
+                {% endif %}
+            </form>
+        </section>
+
+        <!-- SECCIÓN: GESTIONAR SERVICIOS -->
+        <section class="seccion-servicios-admin">
+            <div class="cabecera-servicios-admin">
+                <div>
+                    <h2>Gestionar servicios</h2>
+                    <p class="sub-seccion">Administrá los servicios ofrecidos, actualizá precios o activá/desactivá según disponibilidad.</p>
+                </div>
+                <button type="button" class="btn-agregar-servicio" onclick="abrirModalAgregarServicio()">
+                    + Agregar servicio
+                </button>
+            </div>
+
+            <div class="tabla-servicios-wrapper">
+                <table class="tabla-servicios-admin">
+                    <thead>
+                        <tr>
+                            <th>Servicio</th>
+                            <th>Descripción</th>
+                            <th>Peluqueros</th>
+                            <th>Duración</th>
+                            <th>Precio</th>
+                            <th>Estado</th>
+                            <th class="th-acciones">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in servicios_admin %}
+                            <tr class="fila-servicio {% if s.activo == 0 %}servicio-desactivado{% endif %}">
+                                <td class="td-servicio-nombre">
+                                    <strong>{{ s.nombre }}</strong>
+                                </td>
+                                <td class="td-servicio-desc">
+                                    {{ s.descripcion or 'Sin descripción' }}
+                                </td>
+                                <td class="td-servicio-peluqueros">
+                                    <span style="color: var(--dorado); font-weight: 500;">
+                                        {{ s.peluqueros_nombres or 'Sin peluquero asignado' }}
+                                    </span>
+                                </td>
+                                <td class="td-servicio-duracion">
+                                    {{ s.duracion or 30 }} min
+                                </td>
+                                <td class="td-servicio-precio">
+                                    <strong>${{ "{:,}".format(s.precio).replace(",", ".") }}</strong>
+                                </td>
+                                <td>
+                                    {% if s.activo == 1 %}
+                                        <span class="badge-serv-estado estado-activo">Activo</span>
+                                    {% else %}
+                                        <span class="badge-serv-estado estado-inactivo">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td class="td-acciones-servicio">
+                                    <button type="button" class="btn-accion-serv btn-editar"
+                                            onclick="abrirModalEditarServicio('{{ s.id_servicio }}', '{{ s.nombre|replace("'", "\\'") }}', '{{ s.precio }}', '{{ (s.descripcion or '')|replace("'", "\\'") }}', '{{ s.duracion or 30 }}', '{{ s.peluqueros_ids or '' }}')">
+                                        Editar
+                                    </button>
+
+                                    <form method="post" action="{{ url_for('admin_toggle_servicio', servicio_id=s.id_servicio) }}" style="display:inline;">
+                                        {% if s.activo == 1 %}
+                                            <button type="submit" class="btn-accion-serv btn-toggle-desactivar" title="Ocultar a clientes">
+                                                Desactivar
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn-accion-serv btn-toggle-activar" title="Mostrar a clientes">
+                                                Activar
+                                            </button>
+                                        {% endif %}
+                                    </form>
+
+                                    <form method="post" action="{{ url_for('admin_eliminar_servicio', servicio_id=s.id_servicio) }}"
+                                          style="display:inline;"
+                                          onsubmit="return confirm('¿Estás seguro de que querés eliminar este servicio?');">
+                                        <button type="submit" class="btn-accion-serv btn-eliminar">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- BARRA DE NAVEGACIÓN SEMANAL Y FILTRO -->
+        <section class="barra-controles">
+            <div class="controles-semana">
+                <a href="{{ url_for('admin_agenda', fecha=semana_anterior, peluquero_id=peluquero_id_seleccionado) }}" class="btn-navegacion">
+                    ◀ Semana anterior
+                </a>
+                <a href="{{ url_for('admin_agenda', fecha=hoy_iso, peluquero_id=peluquero_id_seleccionado) }}" class="btn-navegacion btn-hoy">
+                    Hoy
+                </a>
+                <span class="etiqueta-semana">
+                    Semana: {{ dias_semana[0].fecha_corta }} al {{ dias_semana[-1].fecha_corta }}
+                </span>
+                <a href="{{ url_for('admin_agenda', fecha=semana_siguiente, peluquero_id=peluquero_id_seleccionado) }}" class="btn-navegacion">
+                    Semana siguiente ▶
+                </a>
+            </div>
+
+            <form method="get" action="{{ url_for('admin_agenda') }}" class="filtro-peluquero-form">
+                <input type="hidden" name="fecha" value="{{ fecha_ref.strftime('%Y-%m-%d') }}">
+                <label for="peluquero_id">Filtrar por peluquero:</label>
+                <select name="peluquero_id" id="peluquero_id" class="selector-filtro" onchange="this.form.submit()">
+                    <option value="">-- Todos los peluqueros --</option>
+                    {% for p in peluqueros %}
+                        <option value="{{ p.id }}" {% if peluquero_id_seleccionado == p.id %}selected{% endif %}>
+                            {{ p.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </section>
+
+        <!-- GRILLA SEMANAL DE TURNOS (MATRIZ INTERACTIVA) -->
+        <div class="agenda-wrapper">
+            <table class="tabla-agenda">
+                <thead>
+                    <tr>
+                        <th class="columna-hora-header">Horario</th>
+                        {% for dia in dias_semana %}
+                            <th class="th-dia {% if dia.es_hoy %}dia-hoy{% endif %}">
+                                <div class="dia-titulo">{{ dia.nombre }}</div>
+                                <div class="dia-fecha">{{ dia.fecha_corta }}</div>
+                                {% if dia.es_hoy %}
+                                    <span class="badge-hoy">HOY</span>
+                                {% endif %}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hora in horarios %}
+                        <tr>
+                            <td class="td-hora">{{ hora }}</td>
+                            {% for dia in dias_semana %}
+                                {% set turnos_slot = agenda_matriz[dia.fecha_corta][hora] %}
+                                <td class="td-slot">
+                                    {% if turnos_slot %}
+                                        <div class="contenedor-turnos-slot">
+                                            {% for t in turnos_slot %}
+                                                <div class="tarjeta-turno estado-{{ t.estado }} {% if t.editado %}turno-modificado-admin{% endif %}"
+                                                     onclick="abrirModalTurno('{{ t.id }}', '{{ t.cliente_nombre or 'Cliente' }}', '{{ t.cliente_telefono or 'Sin teléfono registrado' }}', '{{ t.peluquero_nombre }}', '{{ t.servicio_nombre }}', '{{ t.fecha }}', '{{ t.hora }}', '{{ t.servicio_precio }}', '{{ t.estado }}', '{{ t.editado or 0 }}', '{{ t.fecha_edicion or '' }}', '{{ t.cambio_detalle or '' }}')">
+                                                    <div class="turno-cliente">👤 {{ t.cliente_nombre or 'Cliente' }}</div>
+                                                    <div class="turno-servicio">✂️ {{ t.servicio_nombre }}</div>
+                                                    <div class="turno-footer">
+                                                        <span class="badge-barbero">💈 {{ t.peluquero_nombre }}</span>
+                                                        {% if t.editado %}
+                                                            <span class="badge-editado" title="Modificado: {{ t.cambio_detalle }}">✏️ Editado</span>
+                                                        {% endif %}
+                                                        <span class="badge-estado {{ t.estado }}">{{ t.estado|capitalize }}</span>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="slot-vacio">Libre</div>
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- SECCIÓN: GESTIONAR PELUQUEROS -->
+        <section class="seccion-servicios-admin" id="seccion-peluqueros" style="margin-top: 36px;">
+            <div class="cabecera-servicios-admin">
+                <div>
+                    <h2>Gestionar peluqueros</h2>
+                    <p class="sub-seccion">Administrá el equipo de la barbería, agregá nuevos profesionales o activá/desactivá según disponibilidad.</p>
+                </div>
+                <button type="button" class="btn-agregar-servicio" onclick="abrirModalAgregarPeluquero()">
+                    + Agregar peluquero
+                </button>
+            </div>
+
+            <div class="tabla-servicios-wrapper">
+                <table class="tabla-servicios-admin">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Especialidades</th>
+                            <th>Estado</th>
+                            <th class="th-acciones">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in peluqueros_admin %}
+                            <tr class="fila-servicio {% if p.activo == 0 %}servicio-desactivado{% endif %}">
+                                <td><strong>💈 {{ p.nombre }}</strong></td>
+                                <td>{{ p.especialidades or 'Sin especialidades registradas' }}</td>
+                                <td>
+                                    {% if p.activo == 1 %}
+                                        <span class="badge-serv-estado estado-activo">Activo</span>
+                                    {% else %}
+                                        <span class="badge-serv-estado estado-inactivo">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td class="td-acciones-servicio">
+                                    <button type="button" class="btn-accion-serv btn-editar" onclick="abrirModalEditarPeluquero('{{ p.id }}', '{{ p.nombre }}')">
+                                        Editar
+                                    </button>
+
+                                    <form method="post" action="{{ url_for('admin_toggle_peluquero', peluquero_id=p.id) }}" style="display:inline;">
+                                        {% if p.activo == 1 %}
+                                            <button type="submit" class="btn-accion-serv btn-toggle-desactivar" title="Ocultar para nuevos clientes">
+                                                Desactivar
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn-accion-serv btn-toggle-activar" title="Permitir nuevas reservas">
+                                                Activar
+                                            </button>
+                                        {% endif %}
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: HISTORIAL DE TURNOS -->
+        <section class="seccion-servicios-admin" id="seccion-historial" style="margin-top: 36px;">
+            <div class="cabecera-servicios-admin">
+                <div>
+                    <h2>Historial de turnos</h2>
+                    <p class="sub-seccion">Consultá el registro histórico de turnos realizados, cancelados o modificados.</p>
+                </div>
+            </div>
+
+            <!-- FILTROS BÁSICOS DEL HISTORIAL -->
+            <form method="get" action="{{ url_for('admin_agenda') }}#seccion-historial" style="display: flex; flex-wrap: wrap; gap: 14px; background: rgba(30,10,14,0.6); padding: 16px; border-radius: 8px; border: 1px solid rgba(201,155,75,0.3); margin-bottom: 20px; align-items: flex-end;">
+                <div>
+                    <label for="hist_estado" style="display: block; font-size: 0.85rem; color: var(--dorado); margin-bottom: 4px;">Estado:</label>
+                    <select name="hist_estado" id="hist_estado" class="selector-filtro" style="padding: 8px 12px; background: var(--bordo-oscuro); color: var(--beige); border: 1px solid var(--dorado); border-radius: 5px;">
+                        <option value="">-- Todos los estados --</option>
+                        <option value="Confirmado" {% if filtro_hist_estado == 'Confirmado' %}selected{% endif %}>Confirmado</option>
+                        <option value="Editado" {% if filtro_hist_estado == 'Editado' %}selected{% endif %}>Editado</option>
+                        <option value="Completado" {% if filtro_hist_estado == 'Completado' %}selected{% endif %}>Completado</option>
+                        <option value="Cancelado" {% if filtro_hist_estado == 'Cancelado' %}selected{% endif %}>Cancelado</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="hist_peluquero" style="display: block; font-size: 0.85rem; color: var(--dorado); margin-bottom: 4px;">Peluquero:</label>
+                    <select name="hist_peluquero" id="hist_peluquero" class="selector-filtro" style="padding: 8px 12px; background: var(--bordo-oscuro); color: var(--beige); border: 1px solid var(--dorado); border-radius: 5px;">
+                        <option value="">-- Todos los peluqueros --</option>
+                        {% for p in peluqueros %}
+                            <option value="{{ p.id }}" {% if filtro_hist_peluquero == (p.id|string) %}selected{% endif %}>{{ p.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="hist_fecha" style="display: block; font-size: 0.85rem; color: var(--dorado); margin-bottom: 4px;">Fecha (DD/MM o AAAA-MM-DD):</label>
+                    <input type="text" name="hist_fecha" id="hist_fecha" placeholder="Ej: 02/10" value="{{ filtro_hist_fecha or '' }}" style="padding: 8px 12px; background: var(--bordo-oscuro); color: var(--beige); border: 1px solid var(--dorado); border-radius: 5px;">
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                    <button type="submit" class="btn-navegacion btn-hoy" style="cursor: pointer; padding: 8px 16px;">Filtrar</button>
+                    <a href="{{ url_for('admin_agenda') }}#seccion-historial" class="btn-navegacion" style="text-decoration: none; padding: 8px 14px;">Limpiar</a>
+                </div>
+            </form>
+
+            <div class="tabla-servicios-wrapper">
+                <table class="tabla-servicios-admin">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Cliente</th>
+                            <th>Teléfono</th>
+                            <th>Peluquero</th>
+                            <th>Servicio</th>
+                            <th>Precio</th>
+                            <th>Estado</th>
+                            <th class="th-acciones">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if turnos_historial %}
+                            {% for t in turnos_historial %}
+                                <tr class="fila-servicio">
+                                    <td><strong>{{ t.fecha }}</strong></td>
+                                    <td>{{ t.hora }} hs</td>
+                                    <td>{{ t.cliente_nombre or 'Cliente' }}</td>
+                                    <td>{{ t.cliente_telefono or '-' }}</td>
+                                    <td>💈 {{ t.peluquero_nombre }}</td>
+                                    <td>✂️ {{ t.servicio_nombre }}</td>
+                                    <td><strong>${{ "{:,}".format(t.servicio_precio).replace(",", ".") }}</strong></td>
+                                    <td>
+                                        <span class="badge-estado-turno {{ t.estado|lower }}">{{ t.estado }}</span>
+                                        {% if t.editado %}
+                                            <span class="badge-editado" title="{{ t.cambio_detalle }}">✏️ Editado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="td-acciones-servicio">
+                                        {% if t.estado|lower not in ['completado', 'cancelado'] %}
+                                            <form method="post" action="{{ url_for('admin_completar_turno', turno_id=t.id) }}" style="display:inline;">
+                                                <button type="submit" class="btn-accion-serv" style="background:#2d6a4f; color:#b7efc5; border-color:#52b788;" title="Marcar como completado">
+                                                    ✔ Completar
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <span style="color:rgba(255,255,255,0.4); font-size:0.85rem;">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9" style="text-align: center; padding: 24px; color: var(--texto-bordo-suave);">
+                                    No se encontraron turnos en el historial con los filtros indicados.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    
+    <!-- MODAL AGREGAR SERVICIO -->
+    <div id="modalAgregarServicio" class="modal-overlay" onclick="cerrarModalAfuera(event)">
+        <div class="modal-contenido">
+            <button class="modal-cerrar" onclick="cerrarModalAgregarServicio()">&times;</button>
+            <div class="modal-header">
+                <h3>+ Agregar nuevo servicio</h3>
+                <p class="sub">Ingresá los datos del servicio para que los clientes puedan reservarlo.</p>
+            </div>
+            <form method="post" action="{{ url_for('admin_agregar_servicio') }}" class="form-modal-servicio">
+                <div class="campo">
+                    <label for="nuevo_nombre">Nombre del servicio *</label>
+                    <input type="text" id="nuevo_nombre" name="nombre" placeholder="Ej: Perfilado de barba" required>
+                </div>
+                <div class="campo">
+                    <label for="nuevo_descripcion">Descripción</label>
+                    <input type="text" id="nuevo_descripcion" name="descripcion" placeholder="Ej: Arreglo y toalla caliente">
+                </div>
+                <div class="grid-dos-campos">
+                    <div class="campo">
+                        <label for="nuevo_precio">Precio ($) *</label>
+                        <input type="number" id="nuevo_precio" name="precio" placeholder="Ej: 8000" min="0" required>
+                    </div>
+                    <div class="campo">
+                        <label for="nueva_duracion">Duración (min)</label>
+                        <input type="number" id="nueva_duracion" name="duracion" value="30" min="5" step="5">
+                    </div>
+                </div>
+                <div class="campo">
+                    <label style="margin-bottom: 8px; display: block;">Peluqueros que realizan este servicio *</label>
+                    <div class="checkbox-peluqueros-grupo" style="display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; border: 1px solid rgba(201,155,75,0.2);">
+                        {% for p in peluqueros %}
+                            <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+                                <input type="checkbox" name="peluqueros_ids" value="{{ p.id }}" class="check-peluquero-nuevo" checked>
+                                <span>💈 {{ p.nombre }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-botones-footer">
+                    <button type="button" class="btn-secundario-modal" onclick="cerrarModalAgregarServicio()">Cancelar</button>
+                    <button type="submit" class="btn-primario-modal">Guardar servicio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR SERVICIO -->
+    <div id="modalEditarServicio" class="modal-overlay" onclick="cerrarModalAfuera(event)">
+        <div class="modal-contenido">
+            <button class="modal-cerrar" onclick="cerrarModalEditarServicio()">&times;</button>
+            <div class="modal-header">
+                <h3>Editar servicio</h3>
+                <p class="sub">Modificá el precio o detalles del servicio.</p>
+            </div>
+            <form id="formEditarServicio" method="post" action="" class="form-modal-servicio">
+                <div class="campo">
+                    <label for="edit_nombre">Nombre del servicio *</label>
+                    <input type="text" id="edit_nombre" name="nombre" required>
+                </div>
+                <div class="campo">
+                    <label for="edit_descripcion">Descripción</label>
+                    <input type="text" id="edit_descripcion" name="descripcion">
+                </div>
+                <div class="grid-dos-campos">
+                    <div class="campo">
+                        <label for="edit_precio">Precio ($) *</label>
+                        <input type="number" id="edit_precio" name="precio" min="0" required>
+                    </div>
+                    <div class="campo">
+                        <label for="edit_duracion">Duración (min)</label>
+                        <input type="number" id="edit_duracion" name="duracion" min="5" step="5">
+                    </div>
+                </div>
+                <div class="campo">
+                    <label style="margin-bottom: 8px; display: block;">Peluqueros que realizan este servicio *</label>
+                    <div class="checkbox-peluqueros-grupo" style="display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; border: 1px solid rgba(201,155,75,0.2);">
+                        {% for p in peluqueros %}
+                            <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+                                <input type="checkbox" name="peluqueros_ids" value="{{ p.id }}" class="check-peluquero-editar" id="edit_peluquero_{{ p.id }}">
+                                <span>💈 {{ p.nombre }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-botones-footer">
+                    <button type="button" class="btn-secundario-modal" onclick="cerrarModalEditarServicio()">Cancelar</button>
+                    <button type="submit" class="btn-primario-modal">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE DETALLE Y CAMBIO DE ESTADO -->
+    <div id="modalTurno" class="modal-overlay" onclick="cerrarModalAfuera(event)">
+        <div class="modal-contenido">
+            <button class="modal-cerrar" onclick="cerrarModalTurno()">&times;</button>
+            <div class="modal-header">
+                <h3>Detalle del turno</h3>
+                <p class="sub">Revisá y administrá el estado de la reserva.</p>
+            </div>
+
+            <ul class="modal-detalles-lista">
+                <li><span>Cliente:</span> <strong id="mCliente">-</strong></li>
+                <li><span>Teléfono / WhatsApp:</span> <strong id="mTelefono">-</strong></li>
+                <li><span>Peluquero asignado:</span> <strong id="mBarbero">-</strong></li>
+                <li><span>Servicio:</span> <strong id="mServicio">-</strong></li>
+                <li><span>Fecha y hora:</span> <strong id="mFechaHora">-</strong></li>
+                <li><span>Precio del servicio:</span> <strong id="mPrecio">-</strong></li>
+                <li><span>Estado actual:</span> <strong id="mEstado">-</strong></li>
+                <li id="mBloqueEditado" class="modal-bloque-edicion" style="display: none;">
+                    <div class="caja-edicion-info">
+                        <span class="etiqueta-modificado-modal">✏️ Turno editado por el cliente</span>
+                        <div class="cambio-texto" id="mCambioDetalle"></div>
+                        <small class="fecha-edicion-texto" id="mFechaEdicion"></small>
+                    </div>
+                </li>
+            </ul>
+
+            <div class="modal-acciones">
+                <div style="margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(201,155,75,0.3);">
+                    <h4>Acción principal:</h4>
+                    <form id="formCompletarDirecto" method="post" action="" style="display: inline-block; margin-top: 6px;">
+                        <button type="submit" class="btn-estado btn-completar" style="padding: 10px 18px; font-weight: bold; background: #2d6a4f; color: #fff; border: 1px solid #52b788; border-radius: 5px; cursor: pointer;">
+                            ✔ Marcar como completado
+                        </button>
+                    </form>
+                </div>
+
+                <h4>Cambiar estado:</h4>
+                <form id="formEstado" method="post" action="" class="form-cambiar-estado">
+                    <button type="submit" name="estado" value="Confirmado" class="btn-estado btn-confirmar">Confirmar</button>
+                    <button type="submit" name="estado" value="Completado" class="btn-estado btn-completar">Completar</button>
+                    <button type="submit" name="estado" value="Cancelado" class="btn-estado btn-cancelar">Cancelar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AGREGAR PELUQUERO -->
+    <div id="modalAgregarPeluquero" class="modal-overlay" onclick="cerrarModalAfuera(event)">
+        <div class="modal-contenido">
+            <button class="modal-cerrar" onclick="cerrarModalAgregarPeluquero()">&times;</button>
+            <div class="modal-header">
+                <h3>+ Agregar nuevo peluquero</h3>
+                <p class="sub">Ingresá el nombre del peluquero/barbero.</p>
+            </div>
+            <form method="post" action="{{ url_for('admin_agregar_peluquero') }}" class="form-modal-servicio">
+                <div class="campo">
+                    <label for="nuevo_peluquero_nombre">Nombre del peluquero *</label>
+                    <input type="text" id="nuevo_peluquero_nombre" name="nombre" placeholder="Ej: Lucas" required>
+                </div>
+                <div class="modal-botones-footer">
+                    <button type="button" class="btn-secundario-modal" onclick="cerrarModalAgregarPeluquero()">Cancelar</button>
+                    <button type="submit" class="btn-primario-modal">Guardar peluquero</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR PELUQUERO -->
+    <div id="modalEditarPeluquero" class="modal-overlay" onclick="cerrarModalAfuera(event)">
+        <div class="modal-contenido">
+            <button class="modal-cerrar" onclick="cerrarModalEditarPeluquero()">&times;</button>
+            <div class="modal-header">
+                <h3>Editar peluquero</h3>
+                <p class="sub">Modificá el nombre del peluquero.</p>
+            </div>
+            <form id="formEditarPeluquero" method="post" action="" class="form-modal-servicio">
+                <div class="campo">
+                    <label for="edit_peluquero_nombre">Nombre del peluquero *</label>
+                    <input type="text" id="edit_peluquero_nombre" name="nombre" required>
+                </div>
+                <div class="modal-botones-footer">
+                    <button type="button" class="btn-secundario-modal" onclick="cerrarModalEditarPeluquero()">Cancelar</button>
+                    <button type="submit" class="btn-primario-modal">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function abrirModalTurno(id, cliente, telefono, barbero, servicio, fecha, hora, precio, estado, editado, fechaEdicion, cambioDetalle) {
+            document.getElementById("mCliente").innerText = cliente;
+            document.getElementById("mTelefono").innerText = telefono;
+            document.getElementById("mBarbero").innerText = barbero;
+            document.getElementById("mServicio").innerText = servicio;
+            document.getElementById("mFechaHora").innerText = fecha + " a las " + hora + " hs";
+            document.getElementById("mPrecio").innerText = "$" + Number(precio).toLocaleString("es-AR");
+            document.getElementById("mEstado").innerText = estado.toUpperCase();
+
+            const bloqueEditado = document.getElementById("mBloqueEditado");
+            if (editado == "1" || editado == 1) {
+                bloqueEditado.style.display = "block";
+                document.getElementById("mCambioDetalle").innerText = cambioDetalle || "Turno modificado por el cliente.";
+                document.getElementById("mFechaEdicion").innerText = fechaEdicion ? ("Modificado el: " + fechaEdicion) : "";
+            } else {
+                bloqueEditado.style.display = "none";
+            }
+
+            const form = document.getElementById("formEstado");
+            form.action = "/admin/turnos/" + id + "/cambiar-estado";
+
+            const formComp = document.getElementById("formCompletarDirecto");
+            if (formComp) {
+                formComp.action = "/admin/turnos/" + id + "/completar";
+            }
+
+            document.getElementById("modalTurno").classList.add("activo");
+        }
+
+        function abrirModalAgregarPeluquero() {
+            document.getElementById("modalAgregarPeluquero").classList.add("activo");
+        }
+
+        function cerrarModalAgregarPeluquero() {
+            document.getElementById("modalAgregarPeluquero").classList.remove("activo");
+        }
+
+        function abrirModalEditarPeluquero(id, nombre) {
+            document.getElementById("edit_peluquero_nombre").value = nombre;
+            document.getElementById("formEditarPeluquero").action = "/admin/peluqueros/" + id + "/editar";
+            document.getElementById("modalEditarPeluquero").classList.add("activo");
+        }
+
+        function cerrarModalEditarPeluquero() {
+            document.getElementById("modalEditarPeluquero").classList.remove("activo");
+        }
+
+        
+        function abrirModalAgregarServicio() {
+            document.getElementById("modalAgregarServicio").classList.add("activo");
+        }
+
+        function cerrarModalAgregarServicio() {
+            document.getElementById("modalAgregarServicio").classList.remove("activo");
+        }
+
+        function abrirModalEditarServicio(id, nombre, precio, descripcion, duracion, peluquerosIdsStr) {
+            document.getElementById("edit_nombre").value = nombre;
+            document.getElementById("edit_precio").value = precio;
+            document.getElementById("edit_descripcion").value = descripcion;
+            document.getElementById("edit_duracion").value = duracion;
+            document.getElementById("formEditarServicio").action = "/admin/servicios/" + id + "/editar";
+
+            const idsSeleccionados = peluquerosIdsStr ? peluquerosIdsStr.split(",").map(x => x.trim()) : [];
+            const checkboxes = document.querySelectorAll(".check-peluquero-editar");
+            checkboxes.forEach(cb => {
+                cb.checked = idsSeleccionados.includes(cb.value);
+            });
+
+            document.getElementById("modalEditarServicio").classList.add("activo");
+        }
+
+        function cerrarModalEditarServicio() {
+            document.getElementById("modalEditarServicio").classList.remove("activo");
+        }
+
+        function cerrarModalTurno() {
+            document.getElementById("modalTurno").classList.remove("activo");
+        }
+
+        function cerrarModalAfuera(event) {
+            if (event.target.id === "modalTurno") {
+                cerrarModalTurno();
+            } else if (event.target.id === "modalAgregarServicio") {
+                cerrarModalAgregarServicio();
+            } else if (event.target.id === "modalEditarServicio") {
+                cerrarModalEditarServicio();
+            } else if (event.target.id === "modalAgregarPeluquero") {
+                cerrarModalAgregarPeluquero();
+            } else if (event.target.id === "modalEditarPeluquero") {
+                cerrarModalEditarPeluquero();
+            }
+        }
+
+        // Validación en el navegador para requerir al menos un peluquero por servicio
+        document.addEventListener("DOMContentLoaded", function() {
+            const formAgregar = document.querySelector("#modalAgregarServicio form");
+            if (formAgregar) {
+                formAgregar.addEventListener("submit", function(e) {
+                    const checked = formAgregar.querySelectorAll("input[name='peluqueros_ids']:checked");
+                    if (checked.length === 0) {
+                        e.preventDefault();
+                        alert("Debes seleccionar al menos un peluquero para realizar este servicio.");
+                    }
+                });
+            }
+
+            const formEditar = document.getElementById("formEditarServicio");
+            if (formEditar) {
+                formEditar.addEventListener("submit", function(e) {
+                    const checked = formEditar.querySelectorAll("input[name='peluqueros_ids']:checked");
+                    if (checked.length === 0) {
+                        e.preventDefault();
+                        alert("Debes seleccionar al menos un peluquero para realizar este servicio.");
+                    }
+                });
+            }
+        });
+
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "Escape") {
+                cerrarModalTurno();
+            }
+        });
+    </script>
+</body>
+</html>

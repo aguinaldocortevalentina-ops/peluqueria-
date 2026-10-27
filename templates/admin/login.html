@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso de administración | Flama Barber</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body class="login-body">
+    <div class="login-card">
+        <span class="badge">Panel de control</span>
+        <h1>Flama Barber</h1>
+        <p class="subtitulo">Ingresá tus datos para acceder al panel.</p>
+
+        {% if error %}
+            <div class="alerta-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('admin_login') }}" class="login-form">
+            <div class="campo">
+                <label for="usuario">Usuario</label>
+                <input type="text" id="usuario" name="usuario" required autofocus>
+            </div>
+
+            <div class="campo">
+                <label for="contrasena">Contraseña</label>
+                <input type="password" id="contrasena" name="contrasena" required>
+            </div>
+
+            <button type="submit" class="boton-admin">Iniciar sesión</button>
+        </form>
+
+        <a href="{{ url_for('inicio') }}" class="volver-sitio">Volver al sitio de clientes</a>
+    </div>
+</body>
+</html>
