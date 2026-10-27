@@ -323,6 +323,15 @@ input[type="date"] {
     color: #e5b35b;
 }
 
+.hora-opcion.hora-no-disponible .estado-hora {
+    color: #f0a4a4;
+    font-size: 0.58rem;
+}
+
+.hora-opcion.hora-reservada .estado-hora {
+    color: #e5b35b;
+}
+
 .resumen-turno {
     margin: 32px 0;
     padding: 20px;
@@ -892,6 +901,304 @@ input[type="date"] {
     font-weight: bold;
     margin: 12px 0 16px;
     text-align: center;
+}
+
+/* =====================================================================
+   INICIO: UNA MARCA, TRES ACCIONES Y CONTENIDO SIN DUPLICADOS
+   ===================================================================== */
+.inicio-contenedor {
+    width: min(100%, 1120px);
+    margin: 0 auto;
+}
+
+.inicio-header {
+    width: min(100%, 1120px);
+    margin: 0 auto 18px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    border: 1px solid rgba(201, 155, 75, 0.45);
+    border-radius: 12px;
+    background: rgba(33, 8, 14, 0.86);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+.logo-contenedor {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: max-content;
+}
+
+.logo-barra {
+    width: 54px;
+    height: 54px;
+    flex: 0 0 54px;
+    border: 1px solid var(--dorado);
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.logo-texto-bloque {
+    display: grid;
+    line-height: 1;
+}
+
+.logo-marca {
+    color: var(--texto-bordo-titulo);
+    font-family: Georgia, serif;
+    font-size: 1.35rem;
+    letter-spacing: 2px;
+}
+
+.logo-submarca {
+    margin-top: 4px;
+    color: var(--dorado);
+    font-size: 0.7rem;
+    font-weight: bold;
+    letter-spacing: 3px;
+}
+
+.inicio-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 9px;
+}
+
+.inicio-acciones .boton-principal,
+.inicio-acciones .boton-secundario {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    margin: 0;
+    padding: 10px 15px;
+    border-radius: 7px;
+    font-size: 0.88rem;
+    font-weight: bold;
+    line-height: 1.1;
+    text-align: center;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.inicio-acciones .boton-principal:hover,
+.inicio-acciones .boton-secundario:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
+}
+
+.inicio-acciones .boton-secundario {
+    border-color: rgba(201, 155, 75, 0.8);
+    background: rgba(92, 24, 35, 0.45);
+    color: var(--beige);
+}
+
+.inicio-acciones .boton-secundario:hover {
+    background: var(--bordo);
+    color: var(--dorado-brillante);
+}
+
+.hero-inicio .badge-estilo {
+    position: relative;
+    z-index: 1;
+    display: inline-block;
+    color: var(--dorado);
+    font-size: 0.76rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.pasos-inicio .paso-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.pasos-inicio .paso-num {
+    color: var(--dorado);
+    font-size: 0.8rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.paso-info strong,
+.paso-info small {
+    display: block;
+}
+
+.paso-info strong {
+    color: var(--texto-bordo-titulo);
+    font-size: 0.94rem;
+}
+
+.paso-info small {
+    margin-top: 4px;
+    color: var(--texto-bordo-suave);
+}
+
+.paso-separador {
+    display: none;
+}
+
+.seccion-servicios-catalogo,
+.seccion-info-local {
+    margin-top: 26px;
+}
+
+.servicios-cabecera {
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.detalle-dorado {
+    color: var(--dorado);
+    font-size: 0.75rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.servicios-cabecera h2 {
+    margin: 8px 0;
+    color: var(--texto-bordo-titulo);
+    font-family: Georgia, serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+}
+
+.servicios-subtitulo {
+    margin: 0;
+    color: var(--texto-bordo-suave);
+}
+
+.grilla-servicios,
+.seccion-info-local {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.tarjeta-servicio-catalogo,
+.card-info-item {
+    padding: 20px;
+    border: 1px solid rgba(201, 155, 75, 0.38);
+    border-radius: 10px;
+    background: rgba(53, 16, 22, 0.88);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.tarjeta-servicio-catalogo {
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.tarjeta-servicio-catalogo:hover {
+    transform: translateY(-3px);
+    border-color: var(--dorado);
+}
+
+.servicio-card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: baseline;
+}
+
+.servicio-card-top h3,
+.card-info-item h4 {
+    margin: 0;
+    color: var(--texto-bordo-titulo);
+    font-family: Georgia, serif;
+    font-size: 1.2rem;
+}
+
+.servicio-card-precio {
+    color: var(--dorado-brillante);
+    font-size: 1.05rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.servicio-card-desc,
+.card-info-item p {
+    color: var(--texto-bordo-suave);
+    line-height: 1.5;
+}
+
+.badge-duracion {
+    color: var(--dorado);
+    font-size: 0.85rem;
+}
+
+.boton-tarjeta-reserva,
+.boton-tarjeta-desactivado {
+    display: block;
+    margin-top: auto;
+    padding: 10px 12px;
+    border: 1px solid var(--dorado);
+    border-radius: 6px;
+    color: var(--bordo-oscuro);
+    background: var(--dorado);
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+}
+
+.boton-tarjeta-desactivado {
+    color: var(--texto-bordo-suave);
+    background: transparent;
+    border-color: rgba(201, 155, 75, 0.4);
+}
+
+.card-info-item {
+    text-align: center;
+}
+
+.info-icono {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 1.4rem;
+}
+
+.pie-inicio {
+    color: rgba(243, 228, 200, 0.7);
+}
+
+.pie-contenido {
+    padding: 6px 0;
+    font-size: 0.82rem;
+}
+
+@media (max-width: 780px) {
+    .inicio-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .inicio-acciones {
+        justify-content: stretch;
+    }
+
+    .inicio-acciones .boton-principal,
+    .inicio-acciones .boton-secundario {
+        flex: 1 1 150px;
+    }
+}
+
+@media (max-width: 440px) {
+    .inicio-acciones .boton-principal,
+    .inicio-acciones .boton-secundario {
+        width: 100%;
+        flex-basis: 100%;
+    }
+
+    .logo-marca {
+        font-size: 1.2rem;
+    }
 }
 
 /* Tarjetas de lista de turnos consultados */

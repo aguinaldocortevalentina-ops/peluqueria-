@@ -11,17 +11,21 @@ document.addEventListener("DOMContentLoaded", function () {
         return seleccionada ? seleccionada.value : "";
     }
 
-    function mostrarDisponibilidad(ocupados) {
+    function mostrarDisponibilidad(reservados, noDisponibles) {
         selectorHorarios.querySelectorAll(".hora-opcion").forEach(function (opcion) {
             const input = opcion.querySelector('input[name="hora"]');
             const estado = opcion.querySelector(".estado-hora");
-            const estaOcupado = ocupados.includes(input.value);
+            const estaReservado = reservados.includes(input.value);
+            const noDisponible = noDisponibles.includes(input.value);
+            const bloqueado = estaReservado || noDisponible;
 
-            input.disabled = estaOcupado;
-            opcion.classList.toggle("hora-ocupada", estaOcupado);
-            estado.textContent = estaOcupado ? "Reservado" : "";
+            input.disabled = bloqueado;
+            opcion.classList.toggle("hora-ocupada", bloqueado);
+            opcion.classList.toggle("hora-reservada", estaReservado);
+            opcion.classList.toggle("hora-no-disponible", !estaReservado && noDisponible);
+            estado.textContent = estaReservado ? "RESERVADO" : (noDisponible ? "TURNO NO DISPONIBLE" : "");
 
-            if (estaOcupado && input.checked) {
+            if (bloqueado && input.checked) {
                 input.checked = false;
             }
         });
@@ -39,7 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             const respuesta = await fetch(url);
             const datos = await respuesta.json();
-            mostrarDisponibilidad(datos.ocupados || []);
+            mostrarDisponibilidad(datos.reservados || [], datos.no_disponibles || datos.ocupados || []);
         } catch (error) {
             // Si no hay conexión, Flask mantiene la validación final al confirmar.
         }

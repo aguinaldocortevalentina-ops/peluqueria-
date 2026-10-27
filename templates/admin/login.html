@@ -8,6 +8,7 @@
 </head>
 <body class="login-body">
     <div class="login-card">
+        <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="Logo Flama Barber" class="logo-login">
         <span class="badge">Panel de control</span>
         <h1>Flama Barber</h1>
         <p class="subtitulo">Ingresá tus datos para acceder al panel.</p>
@@ -24,7 +25,12 @@
 
             <div class="campo">
                 <label for="contrasena">Contraseña</label>
-                <input type="password" id="contrasena" name="contrasena" required>
+                <div class="campo-contrasena-control">
+                    <input type="password" id="contrasena" name="contrasena" required>
+                    <button type="button" id="alternarContrasena" class="boton-ver-contrasena" aria-label="Mostrar contraseña">
+                        Ver
+                    </button>
+                </div>
             </div>
 
             <button type="submit" class="boton-admin">Iniciar sesión</button>
@@ -32,5 +38,6 @@
 
         <a href="{{ url_for('inicio') }}" class="volver-sitio">Volver al sitio de clientes</a>
     </div>
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
 </body>
 </html>

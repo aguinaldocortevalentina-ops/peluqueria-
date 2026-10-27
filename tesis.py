@@ -34,7 +34,6 @@ DIAS_SEMANA = ["LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO", 
 MESES_ABREV = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"]
 
 # Las contraseñas se guardan como hashes, nunca se envían a las plantillas ni en texto plano.
-# Contraseña para alexander y miriam: "peluqueria.26"
 ADMINISTRADORES_INICIALES = [
     {
         "usuario": "alexander",
@@ -312,32 +311,120 @@ def turno_ya_ocurrio(fecha_str, hora_str, momento_actual=None):
         return True
 
 
-def obtener_horarios_ocupados(peluquero_id, fecha_str, turno_id_excluir=None, conexion=None):
-    """Devuelve los horarios ocupados, sin contar turnos cancelados."""
+def fecha_corta_a_fecha(fecha_str, fecha_referencia=None):
+    """Convierte una fecha DD/MM de la aplicación a un objeto date."""
+    try:
+        dia, mes = map(int, str(fecha_str).split("/"))
+        referencia = fecha_referencia or date.today()
+        anio = referencia.year
+        if referencia.month == 12 and mes == 1:
+            anio += 1
+        elif referencia.month == 1 and mes == 12:
+            anio -= 1
+        return date(anio, mes, dia)
+    except (TypeError, ValueError):
+        return None
+
+
+def es_dia_cerrado(fecha_obj):
+    """Indica si la barbería no atiende en la fecha recibida (lunes o domingo)."""
+    return bool(fecha_obj and fecha_obj.weekday() in (0, 6))
+
+
+def mensaje_dia_cerrado(fecha_obj):
+    """Devuelve un mensaje claro para los dos días sin atención."""
+    if fecha_obj and fecha_obj.weekday() == 0:
+        return "Los lunes la barbería permanece cerrada. Por favor, seleccioná otro día."
+    return "Los domingos la barbería permanece cerrada. Por favor, seleccioná otro día."
+
+
+
+def minutos_desde_medianoche(hora_str):
+    """Convierte HH:MM a minutos transcurridos desde las 00:00."""
+    try:
+        h, m = map(int, str(hora_str).strip().split(":"))
+        return h * 60 + m
+    except Exception:
+        return 0
+
+
+def se_superponen(hora1, duracion1, hora2, duracion2):
+    """Comprueba si dos intervalos de tiempo se solapan [ini1, fin1) y [ini2, fin2)."""
+    ini1 = minutos_desde_medianoche(hora1)
+    fin1 = ini1 + int(duracion1 or 30)
+    ini2 = minutos_desde_medianoche(hora2)
+    fin2 = ini2 + int(duracion2 or 30)
+    return ini1 < fin2 and ini2 < fin1
+
+def obtener_estados_horarios(peluquero_id, fecha_str, turno_id_excluir=None, duracion_servicio=30, conexion=None):
+    """Separa los horarios con una reserva real de los que no pueden elegirse."""
     conexion_propia = conexion is None
     if conexion_propia:
         conexion = obtener_conexion()
 
+    # Consultar los turnos existentes con la duración real del servicio que ocupan
     query = """
-        SELECT hora FROM turnos
-        WHERE peluquero_id = ? AND fecha = ? AND LOWER(estado) != 'cancelado'
+        SELECT turnos.id, turnos.hora, COALESCE(servicios.duracion, 30) AS duracion
+        FROM turnos
+        LEFT JOIN servicios ON servicios.id_servicio = turnos.servicio_id
+        WHERE turnos.peluquero_id = ? AND turnos.fecha = ? AND LOWER(turnos.estado) != 'cancelado'
     """
     params = [peluquero_id, fecha_str]
     if turno_id_excluir:
-        query += " AND id != ?"
+        query += " AND turnos.id != ?"
         params.append(turno_id_excluir)
     filas = conexion.execute(query, params).fetchall()
 
     if conexion_propia:
         conexion.close()
 
-    return {fila["hora"] for fila in filas}
+    reservados = set()
+    no_disponibles = set()
+    fecha_obj = fecha_corta_a_fecha(fecha_str)
+
+    # En los días cerrados no se ofrece ningún horario, aunque existan datos históricos.
+    if es_dia_cerrado(fecha_obj):
+        return reservados, set(HORARIOS)
+
+    # Si la fecha consultada es HOY, bloquear cualquier horario que ya haya pasado
+    if fecha_obj == date.today():
+        ahora = datetime.now()
+        minutos_ahora = ahora.hour * 60 + ahora.minute
+        for slot in HORARIOS:
+            if minutos_desde_medianoche(slot) <= minutos_ahora:
+                no_disponibles.add(slot)
+
+    duracion_nueva = int(duracion_servicio or 30)
+
+    # Verificar solapamiento para cada horario posible del salón
+    for slot in HORARIOS:
+        slot_min = minutos_desde_medianoche(slot)
+        # No permitir si el servicio termina después de la hora máxima permitida (20:30 hs)
+        if slot_min + duracion_nueva > (20 * 60 + 30):
+            no_disponibles.add(slot)
+            continue
+
+        # Comprobar si se superpone con alguno de los turnos ya existentes del peluquero
+        for fila in filas:
+            if se_superponen(slot, duracion_nueva, fila["hora"], fila["duracion"]):
+                reservados.add(slot)
+                break
+
+    return reservados, no_disponibles
 
 
-def verificar_disponibilidad_turno(peluquero_id, fecha_str, hora_str, turno_id_excluir=None, conexion=None):
-    """Verifica si un horario está disponible para un peluquero en una fecha determinada."""
+def obtener_horarios_ocupados(peluquero_id, fecha_str, turno_id_excluir=None, duracion_servicio=30, conexion=None):
+    """Devuelve todos los horarios no elegibles; se usa para la validación final."""
+    reservados, no_disponibles = obtener_estados_horarios(
+        peluquero_id, fecha_str, turno_id_excluir, duracion_servicio, conexion
+    )
+    return reservados | no_disponibles
+
+
+def verificar_disponibilidad_turno(peluquero_id, fecha_str, hora_str, turno_id_excluir=None, duracion_servicio=30, conexion=None):
+    """Verifica si un horario está disponible para un peluquero en una fecha determinada respetando duración."""
     horarios_ocupados = obtener_horarios_ocupados(
-        peluquero_id, fecha_str, turno_id_excluir, conexion
+        peluquero_id, fecha_str, turno_id_excluir=turno_id_excluir, duracion_servicio=duracion_servicio, conexion=conexion
     )
     return hora_str not in horarios_ocupados
 
@@ -351,18 +438,19 @@ def fecha_iso_a_corta(fecha_iso):
 
 
 def generar_proximos_dias(cantidad=14):
-    """Genera la lista de próximos días a partir de hoy, identificando los lunes cerrados."""
+    """Genera los próximos días e identifica lunes y domingos como días cerrados."""
     hoy = date.today()
     dias = []
     for i in range(cantidad):
         dia_fecha = hoy + timedelta(days=i)
-        es_lunes = dia_fecha.weekday() == 0
+        cerrado = es_dia_cerrado(dia_fecha)
         dias.append({
             "fecha_str": dia_fecha.strftime("%Y-%m-%d"),
             "dia_nombre": DIAS_SEMANA[dia_fecha.weekday()],
             "dia_numero": dia_fecha.day,
             "mes_nombre": MESES_ABREV[dia_fecha.month - 1],
-            "cerrado": es_lunes
+            "cerrado": cerrado,
+            "leyenda_cierre": f"{DIAS_SEMANA[dia_fecha.weekday()]} — CERRADO" if cerrado else ""
         })
     return dias
 
@@ -400,27 +488,53 @@ def admin_requerido(f):
 @app.route("/")
 def inicio():
     barberia_activa = obtener_estado_barberia()
-    return render_template("index.html", barberia_activa=barberia_activa)
+    conexion = obtener_conexion()
+    servicios = conexion.execute(
+        "SELECT id_servicio, nombre, precio, duracion, descripcion FROM servicios WHERE activo = 1 ORDER BY precio ASC"
+    ).fetchall()
+    conexion.close()
+    return render_template("index.html", barberia_activa=barberia_activa, servicios=servicios)
 
 
 @app.get("/reservar")
 def iniciar_reserva():
-    """Inicia una nueva reserva vacía."""
+    """Inicia una nueva reserva vacía o con servicio preseleccionado."""
+    servicio_id = request.args.get("servicio_id")
     session.pop("reserva", None)
+    if servicio_id:
+        conexion = obtener_conexion()
+        srv = conexion.execute("SELECT id_servicio FROM servicios WHERE id_servicio = ? AND activo = 1", (servicio_id,)).fetchone()
+        conexion.close()
+        if srv:
+            session["reserva"] = {"servicio_id": str(srv["id_servicio"])}
     return redirect(url_for("elegir_peluquero"))
 
 
 @app.get("/reservar/disponibilidad")
 def disponibilidad_reserva():
-    """Devuelve los horarios ya reservados para la fecha y peluquero elegidos."""
+    """Devuelve por separado horarios reservados y no disponibles."""
     reserva = session.get("reserva", {})
     fecha_corta = fecha_iso_a_corta(request.args.get("fecha", ""))
 
     if not reserva.get("peluquero_id") or not fecha_corta:
-        return jsonify({"ocupados": []})
+        return jsonify({"ocupados": [], "reservados": [], "no_disponibles": []})
 
-    ocupados = obtener_horarios_ocupados(reserva["peluquero_id"], fecha_corta)
-    return jsonify({"ocupados": sorted(ocupados)})
+    duracion = 30
+    if reserva.get("servicio_id"):
+        conexion = obtener_conexion()
+        srv = conexion.execute("SELECT duracion FROM servicios WHERE id_servicio = ?", (reserva["servicio_id"],)).fetchone()
+        conexion.close()
+        if srv and srv["duracion"]:
+            duracion = srv["duracion"]
+
+    reservados, no_disponibles = obtener_estados_horarios(
+        reserva["peluquero_id"], fecha_corta, duracion_servicio=duracion
+    )
+    return jsonify({
+        "ocupados": sorted(reservados | no_disponibles),
+        "reservados": sorted(reservados),
+        "no_disponibles": sorted(no_disponibles)
+    })
 
 
 @app.route("/reservar/peluquero", methods=["GET", "POST"])
@@ -428,6 +542,9 @@ def elegir_peluquero():
     """Permite seleccionar un peluquero activo."""
     if not obtener_estado_barberia():
         return redirect(url_for("inicio"))
+
+    reserva = session.get("reserva", {})
+    servicio_pre = reserva.get("servicio_id")
 
     if request.method == "POST":
         peluquero_id = request.form.get("peluquero_id")
@@ -437,10 +554,32 @@ def elegir_peluquero():
         if not peluquero or peluquero["activo"] == 0:
             return redirect(url_for("elegir_peluquero"))
 
-        session["reserva"] = {"peluquero_id": peluquero_id}
+        reserva["peluquero_id"] = peluquero_id
+        session["reserva"] = reserva
+
+        # Si el servicio ya estaba preseleccionado, verificar si este peluquero lo ofrece
+        if servicio_pre:
+            conexion = obtener_conexion()
+            ofrece = conexion.execute(
+                "SELECT 1 FROM peluquero_servicios WHERE peluquero_id = ? AND servicio_id = ?",
+                (peluquero_id, servicio_pre)
+            ).fetchone()
+            conexion.close()
+            if ofrece:
+                return redirect(url_for("elegir_fecha_hora"))
+
         return redirect(url_for("elegir_servicio"))
 
-    return render_template("reserva_peluquero.html", peluqueros=obtener_peluqueros(solo_activos=True), reserva=session.get("reserva", {}))
+    peluqueros = list(obtener_peluqueros(solo_activos=True))
+    if servicio_pre:
+        conexion = obtener_conexion()
+        ids_validos = {r["peluquero_id"] for r in conexion.execute(
+            "SELECT peluquero_id FROM peluquero_servicios WHERE servicio_id = ?", (servicio_pre,)
+        ).fetchall()}
+        conexion.close()
+        peluqueros = [p for p in peluqueros if p["id"] in ids_validos]
+
+    return render_template("reserva_peluquero.html", peluqueros=peluqueros, reserva=reserva)
 
 
 @app.route("/reservar/servicio", methods=["GET", "POST"])
@@ -486,7 +625,7 @@ def elegir_fecha_hora():
         "SELECT id, nombre FROM peluqueros WHERE id = ?", (reserva["peluquero_id"],)
     ).fetchone()
     servicio = conexion.execute(
-        "SELECT id_servicio, nombre, precio FROM servicios WHERE id_servicio = ?", (reserva["servicio_id"],)
+        "SELECT id_servicio, nombre, precio, duracion, descripcion FROM servicios WHERE id_servicio = ?", (reserva["servicio_id"],)
     ).fetchone()
 
     fecha_minima = date.today().strftime("%Y-%m-%d")
@@ -540,8 +679,8 @@ def elegir_fecha_hora():
                 cliente_telefono=cliente_telefono
             )
 
-        if fecha_obj.weekday() == 0:
-            error = "Los lunes la barbería permanece cerrada. Por favor, seleccioná otro día."
+        if es_dia_cerrado(fecha_obj):
+            error = mensaje_dia_cerrado(fecha_obj)
             conexion.close()
             return render_template(
                 "reserva_fecha_hora.html",
@@ -556,6 +695,25 @@ def elegir_fecha_hora():
                 cliente_nombre=cliente_nombre,
                 cliente_telefono=cliente_telefono
             )
+
+        ahora = datetime.now()
+        if fecha_obj == date.today():
+            if minutos_desde_medianoche(hora) <= (ahora.hour * 60 + ahora.minute):
+                error = "El horario seleccionado ya no se encuentra disponible porque ya pasó el día de hoy."
+                conexion.close()
+                return render_template(
+                    "reserva_fecha_hora.html",
+                    peluquero=peluquero,
+                    servicio=servicio,
+                    horarios=HORARIOS,
+                    proximos_dias=proximos_dias,
+                    fecha_minima=fecha_minima,
+                    error=error,
+                    fecha_seleccionada=fecha_str or primer_dia_disponible,
+                    hora_seleccionada=hora,
+                    cliente_nombre=cliente_nombre,
+                    cliente_telefono=cliente_telefono
+                )
 
         if not cliente_nombre:
             error = "Por favor, ingresá tu nombre completo."
@@ -613,8 +771,9 @@ def elegir_fecha_hora():
 
         # Esta transacción bloquea escrituras simultáneas mientras vuelve a comprobar la disponibilidad.
         conexion.execute("BEGIN IMMEDIATE")
+        duracion_actual = servicio["duracion"] if servicio and servicio["duracion"] else 30
         if not verificar_disponibilidad_turno(
-            reserva["peluquero_id"], fecha_formateada, hora, conexion=conexion
+            reserva["peluquero_id"], fecha_formateada, hora, duracion_servicio=duracion_actual, conexion=conexion
         ):
             conexion.rollback()
             error = "El horario seleccionado ya no se encuentra disponible. Por favor, elegí otro."
@@ -782,22 +941,30 @@ def cancelar_turno(turno_id):
 
 @app.get("/turnos/<int:turno_id>/disponibilidad")
 def disponibilidad_edicion(turno_id):
-    """Devuelve horarios ocupados al modificar un turno, excluyendo el turno actual."""
+    """Devuelve horarios reservados y no disponibles al modificar un turno."""
     fecha_corta = fecha_iso_a_corta(request.args.get("fecha", ""))
     conexion = obtener_conexion()
     turno = conexion.execute(
-        "SELECT peluquero_id FROM turnos WHERE id = ?", (turno_id,)
+        """SELECT turnos.peluquero_id, turnos.servicio_id, COALESCE(servicios.duracion, 30) AS duracion
+           FROM turnos
+           LEFT JOIN servicios ON servicios.id_servicio = turnos.servicio_id
+           WHERE turnos.id = ?""", (turno_id,)
     ).fetchone()
 
     if not turno or not fecha_corta:
         conexion.close()
-        return jsonify({"ocupados": []})
+        return jsonify({"ocupados": [], "reservados": [], "no_disponibles": []})
 
-    ocupados = obtener_horarios_ocupados(
-        turno["peluquero_id"], fecha_corta, turno_id, conexion
+    duracion = turno["duracion"]
+    reservados, no_disponibles = obtener_estados_horarios(
+        turno["peluquero_id"], fecha_corta, turno_id_excluir=turno_id, duracion_servicio=duracion, conexion=conexion
     )
     conexion.close()
-    return jsonify({"ocupados": sorted(ocupados)})
+    return jsonify({
+        "ocupados": sorted(reservados | no_disponibles),
+        "reservados": sorted(reservados),
+        "no_disponibles": sorted(no_disponibles)
+    })
 
 
 @app.route("/turnos/<int:turno_id>/editar", methods=["GET", "POST"])
@@ -882,8 +1049,8 @@ def editar_turno(turno_id):
                 hora_seleccionada=nueva_hora
             ), 400
 
-        if fecha_obj.weekday() == 0:
-            error = "Los lunes la barbería permanece cerrada. Por favor, seleccioná otro día."
+        if es_dia_cerrado(fecha_obj):
+            error = mensaje_dia_cerrado(fecha_obj)
             return render_template(
                 "editar_turno.html",
                 turno=turno,
@@ -962,11 +1129,31 @@ def guardar_edicion_turno(turno_id):
         conexion.close()
         return redirect(url_for("editar_turno", turno_id=turno_id))
 
+    fecha_nueva_obj = fecha_corta_a_fecha(nueva_fecha)
+    if not fecha_nueva_obj or es_dia_cerrado(fecha_nueva_obj) or nueva_hora not in HORARIOS:
+        conexion.close()
+        return redirect(url_for("editar_turno", turno_id=turno_id))
+
     # Revisa dentro de una transacción para que otro cambio simultáneo no ocupe el mismo horario.
     conexion.execute("BEGIN IMMEDIATE")
+    # Si la fecha de edición es hoy, no permitir horarios pasados
+    try:
+        dia_ed, mes_ed = map(int, nueva_fecha.split("/"))
+        hoy = date.today()
+        if dia_ed == hoy.day and mes_ed == hoy.month:
+            ahora = datetime.now()
+            if minutos_desde_medianoche(nueva_hora) <= (ahora.hour * 60 + ahora.minute):
+                conexion.close()
+                return redirect(url_for("editar_turno", turno_id=turno_id))
+    except Exception:
+        pass
+
+    srv_ed = conexion.execute("SELECT duracion FROM servicios WHERE id_servicio = ?", (turno["servicio_id"],)).fetchone()
+    duracion_ed = srv_ed["duracion"] if srv_ed and srv_ed["duracion"] else 30
+
     if not verificar_disponibilidad_turno(
         turno["peluquero_id"], nueva_fecha, nueva_hora,
-        turno_id_excluir=turno["id"], conexion=conexion
+        turno_id_excluir=turno["id"], duracion_servicio=duracion_ed, conexion=conexion
     ):
         conexion.rollback()
         conexion.close()

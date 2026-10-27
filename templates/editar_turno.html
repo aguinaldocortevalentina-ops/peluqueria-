@@ -39,7 +39,7 @@
 
                 <div class="aviso-lunes-cerrado">
                     <span class="icono-aviso">ℹ️</span>
-                    <span>Los lunes la barbería permanece cerrada.</span>
+                    <span>Los lunes y domingos la barbería permanece cerrada.</span>
                 </div>
 
                 <div class="selector-dias" id="selectorDias" role="radiogroup" aria-label="Seleccionar nueva fecha">
@@ -52,10 +52,10 @@
                                    {% if (fecha_seleccionada or '') == dia.fecha_str and not dia.cerrado %}checked{% endif %}
                                    required>
                             <span class="dia-tarjeta">
-                                <span class="dia-nombre">{{ dia.dia_nombre }}</span>
                                 {% if dia.cerrado %}
-                                    <span class="dia-estado-cerrado">CERRADO</span>
+                                    <span class="dia-estado-cerrado">{{ dia.leyenda_cierre }}</span>
                                 {% else %}
+                                    <span class="dia-nombre">{{ dia.dia_nombre }}</span>
                                     <span class="dia-numero">{{ dia.dia_numero }} {{ dia.mes_nombre }}</span>
                                 {% endif %}
                             </span>

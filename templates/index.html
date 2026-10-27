@@ -3,52 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flama Barber</title>
+    <title>Flama Barber | Barbería & Peluquería Tradicional</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="inicio-body">
-    <main class="inicio">
-        <section class="hero-inicio">
-            <p class="detalle">FLAMA BARBER</p>
-            <h1>Tu estilo empieza acá.</h1>
-            <p class="hero-descripcion">
-                Elegí tu peluquero, el servicio que necesitás y reservá tu turno en pocos pasos.
-            </p>
-            {% if barberia_activa %}
-                <div class="botones-hero-grupo">
-                    <a class="boton-principal boton-reserva" href="{{ url_for('iniciar_reserva') }}">Reservar turno</a>
-                    <a class="boton-secundario boton-consultar-turno" href="{{ url_for('consultar_turno') }}">Consultar o modificar mi turno</a>
-                </div>
 
-                <div class="pasos-inicio" aria-label="Cómo reservar">
-                    <div><span>01</span><p>Elegí tu peluquero</p></div>
-                    <div><span>02</span><p>Seleccioná tu servicio</p></div>
-                    <div><span>03</span><p>Definí fecha y hora</p></div>
+    <!-- Un único logo y los accesos principales de la página de inicio. -->
+    <header class="inicio-header">
+        <div class="logo-contenedor">
+            <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="Logo Flama Barber" class="logo-barra">
+            <div class="logo-texto-bloque">
+                <span class="logo-marca">FLAMA</span>
+                <span class="logo-submarca">BARBER</span>
+            </div>
+        </div>
+        <nav class="inicio-nav inicio-acciones" aria-label="Acciones principales">
+            {% if barberia_activa %}
+                <a class="boton-principal boton-reserva" href="{{ url_for('iniciar_reserva') }}">Reservar turno</a>
+            {% endif %}
+            <a class="boton-secundario boton-modificar" href="{{ url_for('consultar_turno') }}">Modificar turno</a>
+            <a href="{{ url_for('admin_agenda') }}" class="boton-secundario boton-panel">Panel de administración</a>
+        </nav>
+    </header>
+
+    <main class="inicio-contenedor">
+        <!-- SECCIÓN HERO -->
+        <section class="hero-inicio">
+            <span class="badge-estilo">ESTILO · PRECISIÓN · PASIÓN</span>
+            <h1 class="hero-titulo">Tu estilo empieza acá.</h1>
+            <p class="hero-descripcion">
+                Atención profesional, cortes clásicos y modernos, barbería tradicional y coloración.
+                Elegí a tu peluquero de confianza y asegurá tu turno en simples pasos.
+            </p>
+
+            {% if barberia_activa %}
+                <div class="pasos-inicio" aria-label="Cómo reservar en 3 pasos">
+                    <div class="paso-item">
+                        <span class="paso-num">01</span>
+                        <div class="paso-info">
+                            <strong>Elegí tu barbero</strong>
+                            <small>Miriam o Alexander</small>
+                        </div>
+                    </div>
+                    <div class="paso-separador">›</div>
+                    <div class="paso-item">
+                        <span class="paso-num">02</span>
+                        <div class="paso-info">
+                            <strong>Seleccioná el servicio</strong>
+                            <small>Cortes, barba o color</small>
+                        </div>
+                    </div>
+                    <div class="paso-separador">›</div>
+                    <div class="paso-item">
+                        <span class="paso-num">03</span>
+                        <div class="paso-info">
+                            <strong>Definí fecha y hora</strong>
+                            <small>Disponibilidad al instante</small>
+                        </div>
+                    </div>
                 </div>
             {% else %}
                 <div class="aviso-barberia-cerrada-inicio">
                     <div class="icono-cerrado-grande">🔴</div>
-                    <h3>En este momento la barbería se encuentra cerrada.</h3>
-                    <p class="mensaje-cerrado-sub">Disculpá las molestias. Volvé a visitarnos más tarde.</p>
+                    <h3>En este momento la barbería se encuentra cerrada</h3>
+                    <p class="mensaje-cerrado-sub">
+                        No se están recibiendo nuevas reservas temporalmente. Por favor, volvé a consultarnos más tarde.
+                    </p>
+                    <div style="margin-top: 18px;">
+                        <a class="boton-secundario" href="{{ url_for('consultar_turno') }}">Consultar turnos existentes</a>
+                    </div>
                 </div>
             {% endif %}
         </section>
 
-        <section class="servicios servicios-inicio">
-            <p class="detalle">SERVICIOS</p>
-            <h2>Hecho a tu medida</h2>
-            <ul>
-                {% for servicio in servicios %}
-                    <li>
-                        <span>{{ servicio.nombre }}</span>
-                        <strong>${{ "{:,}".format(servicio.precio).replace(",", ".") }}</strong>
-                    </li>
-                {% endfor %}
-            </ul>
+        <!-- SECCIÓN DE SERVICIOS DINÁMICOS CON TARJETAS MODERNAS -->
+        <section class="seccion-servicios-catalogo" id="servicios-seccion">
+            <div class="servicios-cabecera">
+                <span class="detalle-dorado">SERVICIOS EXCLUSIVOS</span>
+                <h2>Hecho a tu medida</h2>
+                <p class="servicios-subtitulo">Precios actualizados y atención con productos de máxima calidad.</p>
+            </div>
+
+            {% if servicios %}
+                <div class="grilla-servicios">
+                    {% for servicio in servicios %}
+                        <article class="tarjeta-servicio-catalogo">
+                            <div class="servicio-card-top">
+                                <h3>{{ servicio.nombre }}</h3>
+                                <span class="servicio-card-precio">${{ "{:,}".format(servicio.precio).replace(",", ".") }}</span>
+                            </div>
+                            <p class="servicio-card-desc">
+                                {{ servicio.descripcion or "Cuidado profesional adaptado a tu estilo y personalidad." }}
+                            </p>
+                            <div class="servicio-card-meta">
+                                <span class="badge-duracion">
+                                    <span class="reloj-icono">⏱️</span> {{ servicio.duracion or 30 }} minutos
+                                </span>
+                            </div>
+                            {% if barberia_activa %}
+                                <a href="{{ url_for('iniciar_reserva', servicio_id=servicio.id_servicio) }}" class="boton-tarjeta-reserva">
+                                    Reservar este servicio
+                                </a>
+                            {% else %}
+                                <span class="boton-tarjeta-desactivado">Cerrado temporalmente</span>
+                            {% endif %}
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="mensaje-sin-servicios">No hay servicios disponibles en este momento.</p>
+            {% endif %}
         </section>
 
+        <!-- SECCIÓN DE INFORMACIÓN Y HORARIOS -->
+        <section class="seccion-info-local">
+            <div class="card-info-item">
+                <span class="info-icono">📍</span>
+                <h4>Ubicación</h4>
+                <p>Ambiente moderno, climatizado y con las mejores comodidades.</p>
+            </div>
+            <div class="card-info-item">
+                <span class="info-icono">🗓️</span>
+                <h4>Horarios de atención</h4>
+                <p>Martes a Sábado: 09:00 a 20:30 hs.<br><strong>Lunes y domingos: Cerrado</strong></p>
+            </div>
+            <div class="card-info-item">
+                <span class="info-icono">💈</span>
+                <h4>Barberos profesionales</h4>
+                <p>Alexander y Miriam especializados en corte clásico, fade y colorimetría.</p>
+            </div>
+        </section>
+
+        <!-- PIE DE PÁGINA -->
         <footer class="pie-inicio">
-            <a href="{{ url_for('admin_agenda') }}">Acceso de administración</a>
+            <div class="pie-contenido">
+                <span>Flama Barber &copy; 2026 - Proyecto de Tesis</span>
+            </div>
         </footer>
     </main>
 </body>
