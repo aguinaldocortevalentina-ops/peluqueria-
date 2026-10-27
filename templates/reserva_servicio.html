@@ -13,18 +13,26 @@
         <p class="mensaje">Servicios disponibles con {{ peluquero.nombre }}.</p>
         <form method="post">
             <div class="tarjetas-servicios">
-                {% for servicio in servicios %}
-                    <label class="tarjeta-seleccionable servicio-seleccionable">
-                        <input name="servicio_id" type="radio" value="{{ servicio.id_servicio }}" {% if reserva.get('servicio_id') == servicio.id_servicio|string %}checked{% endif %} required>
-                        <strong>{{ servicio.nombre }}</strong>
-                        <small>Servicio personalizado para tu estilo.</small>
-                        <span>${{ "{:,}".format(servicio.precio).replace(",", ".") }}</span>
-                    </label>
-                {% endfor %}
+                {% if servicios %}
+                    {% for servicio in servicios %}
+                        <label class="tarjeta-seleccionable servicio-seleccionable">
+                            <input name="servicio_id" type="radio" value="{{ servicio.id_servicio }}" {% if reserva.get('servicio_id') == servicio.id_servicio|string %}checked{% endif %} required>
+                            <strong>{{ servicio.nombre }}</strong>
+                            <small>{{ servicio.descripcion or 'Servicio personalizado para tu estilo.' }}</small>
+                            <span>${{ "{:,}".format(servicio.precio).replace(",", ".") }}</span>
+                        </label>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align: center; color: var(--texto-bordo-suave); padding: 20px;">
+                        Este profesional no tiene servicios disponibles actualmente.
+                    </p>
+                {% endif %}
             </div>
             <div class="navegacion-pasos">
                 <a class="boton-secundario" href="{{ url_for('elegir_peluquero') }}">Anterior</a>
-                <button type="submit">Siguiente</button>
+                {% if servicios %}
+                    <button type="submit">Siguiente</button>
+                {% endif %}
             </div>
         </form>
     </main>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Turnos | Flama Barber</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="portada reserva">
+        <p class="detalle">GESTIÓN DE CLIENTES</p>
+        <h1>Mis Turnos</h1>
+        <p class="mensaje">Ingresá tu teléfono o código de turno para consultar, modificar o cancelar tu horario.</p>
+
+        {% if mensaje_cancelado %}
+            <div class="alerta-exito" style="background: rgba(45, 106, 79, 0.4); border: 1px solid #52b788; color: #b7efc5; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; text-align: center;">
+                ✔ {{ mensaje_cancelado }}
+            </div>
+        {% endif %}
+
+        {% if error %}
+            <div class="alerta-error">
+                <strong>Atención:</strong> {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('consultar_turno') }}" class="formulario-reserva" style="margin-bottom: 24px;">
+            <label for="busqueda">Teléfono (10 dígitos) o N° de Turno</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text"
+                       id="busqueda"
+                       name="busqueda"
+                       placeholder="Ej: 3512345678 o 12"
+                       value="{{ busqueda or '' }}"
+                       required>
+                <button type="submit" style="margin-top: 0; padding: 11px 20px; white-space: nowrap;">Buscar</button>
+            </div>
+            <small class="ayuda-campo">Buscá los turnos asociados a tu número de contacto.</small>
+        </form>
+
+        {% if busqueda_realizada %}
+            <!-- SECCIÓN: PRÓXIMOS TURNOS -->
+            <div style="margin-top: 28px; width: 100%;">
+                <h2 style="font-size: 1.25rem; color: var(--dorado); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(201,155,75,0.3); padding-bottom: 6px;">
+                    Próximos turnos
+                </h2>
+                {% if turnos_proximos %}
+                    <div class="lista-turnos-consultados">
+                        {% for t in turnos_proximos %}
+                            <div class="tarjeta-turno-cliente">
+                                <div class="cabecera-tarjeta-turno">
+                                    <span class="nro-turno">Turno #{{ t.id }}</span>
+                                    <span class="badge-estado-turno {{ t.estado|lower }}">{{ t.estado }}</span>
+                                </div>
+
+                                <div class="cuerpo-tarjeta-turno">
+                                    <p><strong>Peluquero:</strong> {{ t.peluquero_nombre }}</p>
+                                    <p><strong>Servicio:</strong> {{ t.servicio_nombre }} (${{ "{:,}".format(t.servicio_precio).replace(",", ".") }})</p>
+                                    <p class="fecha-hora-destacada">
+                                        📅 <strong>{{ t.fecha }}</strong> a las <strong>{{ t.hora }} hs</strong>
+                                    </p>
+                                    {% if t.editado %}
+                                        <p style="font-size: 0.85rem; color: var(--dorado); margin-top: 6px;">
+                                            ✏️ <em>Modificado anteriormente</em>
+                                        </p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="pie-tarjeta-turno" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    {% if t.puede_editar %}
+                                        <a href="{{ url_for('editar_turno', turno_id=t.id) }}" class="boton-principal" style="margin-top: 0; padding: 9px 16px; font-size: 0.9rem;">
+                                            ✏️ Editar turno
+                                        </a>
+                                    {% else %}
+                                        <div class="aviso-bloqueo-edicion" style="margin: 0;">
+                                            <span class="icono-reloj">⏳</span>
+                                            <span style="font-size: 0.82rem;">{{ t.motivo_bloqueo or 'No se puede modificar (menos de 2 hs).' }}</span>
+                                        </div>
+                                    {% endif %}
+
+                                    {% if t.puede_cancelar %}
+                                        <form method="post" action="{{ url_for('cancelar_turno', turno_id=t.id) }}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que querés cancelar este turno?');">
+                                            <button type="submit" class="boton-secundario" style="margin-top: 0; padding: 9px 16px; font-size: 0.9rem; color: #ff8585; border-color: #ff8585;">
+                                                ❌ Cancelar turno
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="aviso-no-encontrado" style="margin-bottom: 20px;">
+                        <p>No tenés turnos próximos.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- SECCIÓN: TURNOS ANTERIORES / HISTORIAL -->
+            {% if turnos_anteriores %}
+                <div style="margin-top: 32px; width: 100%;">
+                    <h2 style="font-size: 1.15rem; color: rgba(255,255,255,0.7); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 6px;">
+                        Turnos anteriores
+                    </h2>
+                    <div class="lista-turnos-consultados">
+                        {% for t in turnos_anteriores %}
+                            <div class="tarjeta-turno-cliente" style="opacity: 0.85;">
+                                <div class="cabecera-tarjeta-turno">
+                                    <span class="nro-turno">Turno #{{ t.id }}</span>
+                                    <span class="badge-estado-turno {{ t.estado|lower }}">{{ t.estado }}</span>
+                                </div>
+
+                                <div class="cuerpo-tarjeta-turno">
+                                    <p><strong>Peluquero:</strong> {{ t.peluquero_nombre }}</p>
+                                    <p><strong>Servicio:</strong> {{ t.servicio_nombre }} (${{ "{:,}".format(t.servicio_precio).replace(",", ".") }})</p>
+                                    <p>📅 {{ t.fecha }} a las {{ t.hora }} hs</p>
+                                </div>
+                                <div class="pie-tarjeta-turno">
+                                    <span style="font-size: 0.82rem; color: rgba(255,255,255,0.5);">Registro histórico (no editable)</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if not turnos_proximos and not turnos_anteriores %}
+                <div class="aviso-no-encontrado">
+                    <p>No se encontraron turnos con el dato ingresado.</p>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        <div class="navegacion-pasos" style="margin-top: 28px;">
+            <a class="boton-secundario" href="{{ url_for('inicio') }}">Volver al inicio</a>
+            <a class="boton-principal" href="{{ url_for('iniciar_reserva') }}" style="margin-top: 0;">Reservar nuevo turno</a>
+        </div>
+    </main>
+</body>
+</html>

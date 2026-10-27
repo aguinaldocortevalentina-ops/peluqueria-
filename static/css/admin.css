@@ -1,4 +1,4 @@
-﻿:root {
+:root {
     --bordo: #5c1823;
     --bordo-oscuro: #351016;
     --bordo-profundo: #20080d;
@@ -491,6 +491,10 @@ body {
     border-left-color: var(--dorado-brillante);
 }
 
+.tarjeta-turno.estado-editado {
+    border-left-color: #42a5f5;
+}
+
 .tarjeta-turno.estado-completado {
     border-left-color: var(--verde-texto);
     opacity: 0.85;
@@ -554,6 +558,12 @@ body {
     background-color: rgba(201, 155, 75, 0.25);
     color: var(--dorado-brillante);
     border: 1px solid var(--dorado);
+}
+
+.badge-estado.editado {
+    background-color: rgba(30, 144, 255, 0.25);
+    color: #90caf9;
+    border: 1px solid #42a5f5;
 }
 
 .badge-estado.completado {
@@ -717,4 +727,393 @@ body {
     .controles-semana {
         justify-content: space-between;
     }
+}
+
+
+/* =====================================================================
+   ESTILOS: ESTADO DE LA BARBERÍA Y GESTIÓN DE SERVICIOS
+   ===================================================================== */
+.card-estado-barberia {
+    background-color: var(--bordo-oscuro);
+    border: 1px solid var(--dorado);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.estado-indicador-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.estado-titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--beige);
+}
+
+.badge-barberia-estado {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.badge-barberia-estado.activa {
+    background-color: rgba(45, 106, 79, 0.3);
+    color: var(--verde-texto);
+    border: 1px solid var(--verde);
+}
+
+.badge-barberia-estado.inactiva {
+    background-color: rgba(122, 28, 29, 0.35);
+    color: var(--rojo-texto);
+    border: 1px solid var(--rojo);
+}
+
+.estado-barberia-desc {
+    font-size: 0.88rem;
+    color: rgba(243, 228, 200, 0.75);
+}
+
+.btn-accion-barberia {
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-accion-barberia.btn-desactivar {
+    background-color: rgba(122, 28, 29, 0.35);
+    border-color: var(--rojo);
+    color: var(--rojo-texto);
+}
+
+.btn-accion-barberia.btn-desactivar:hover {
+    background-color: var(--rojo);
+    color: #ffffff;
+}
+
+.btn-accion-barberia.btn-activar {
+    background-color: rgba(45, 106, 79, 0.35);
+    border-color: var(--verde);
+    color: var(--verde-texto);
+}
+
+.btn-accion-barberia.btn-activar:hover {
+    background-color: var(--verde);
+    color: #ffffff;
+}
+
+/* SECCIÓN GESTIONAR SERVICIOS */
+.seccion-servicios-admin {
+    background-color: var(--bordo-oscuro);
+    border: 1px solid var(--dorado);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 28px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.cabecera-servicios-admin {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.cabecera-servicios-admin h2 {
+    font-family: Georgia, serif;
+    font-size: 1.5rem;
+    color: var(--dorado-brillante);
+    margin-bottom: 4px;
+}
+
+.sub-seccion {
+    font-size: 0.88rem;
+    color: rgba(243, 228, 200, 0.75);
+}
+
+.btn-agregar-servicio {
+    background-color: var(--dorado);
+    color: var(--bordo-profundo);
+    border: 1px solid var(--dorado-brillante);
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-agregar-servicio:hover {
+    background-color: var(--dorado-brillante);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.tabla-servicios-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--gris-borde);
+    border-radius: 8px;
+}
+
+.tabla-servicios-admin {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.tabla-servicios-admin th {
+    background-color: rgba(32, 8, 13, 0.9);
+    color: var(--dorado);
+    padding: 12px 16px;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 1px solid var(--gris-borde);
+}
+
+.tabla-servicios-admin td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(201, 155, 75, 0.15);
+    color: var(--beige);
+    vertical-align: middle;
+}
+
+.fila-servicio:hover td {
+    background-color: rgba(201, 155, 75, 0.05);
+}
+
+.fila-servicio.servicio-desactivado td {
+    opacity: 0.65;
+}
+
+.td-servicio-nombre strong {
+    color: var(--beige);
+    font-size: 0.95rem;
+}
+
+.td-servicio-desc {
+    color: rgba(243, 228, 200, 0.75);
+    font-size: 0.85rem;
+    max-width: 250px;
+}
+
+.td-servicio-precio strong {
+    color: var(--dorado-brillante);
+    font-size: 1rem;
+}
+
+.badge-serv-estado {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-serv-estado.estado-activo {
+    background-color: rgba(45, 106, 79, 0.3);
+    color: var(--verde-texto);
+    border: 1px solid var(--verde);
+}
+
+.badge-serv-estado.estado-inactivo {
+    background-color: rgba(122, 28, 29, 0.3);
+    color: var(--rojo-texto);
+    border: 1px solid var(--rojo);
+}
+
+.td-acciones-servicio {
+    white-space: nowrap;
+}
+
+.btn-accion-serv {
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+    margin-right: 4px;
+}
+
+.btn-accion-serv.btn-editar {
+    background-color: rgba(201, 155, 75, 0.2);
+    border-color: var(--dorado);
+    color: var(--dorado-brillante);
+}
+
+.btn-accion-serv.btn-editar:hover {
+    background-color: var(--dorado);
+    color: var(--bordo-profundo);
+}
+
+.btn-accion-serv.btn-toggle-desactivar {
+    background-color: rgba(122, 28, 29, 0.25);
+    border-color: var(--rojo);
+    color: var(--rojo-texto);
+}
+
+.btn-accion-serv.btn-toggle-desactivar:hover {
+    background-color: var(--rojo);
+    color: #ffffff;
+}
+
+.btn-accion-serv.btn-toggle-activar {
+    background-color: rgba(45, 106, 79, 0.25);
+    border-color: var(--verde);
+    color: var(--verde-texto);
+}
+
+.btn-accion-serv.btn-toggle-activar:hover {
+    background-color: var(--verde);
+    color: #ffffff;
+}
+
+.btn-accion-serv.btn-eliminar {
+    background-color: rgba(44, 44, 46, 0.6);
+    border-color: #666;
+    color: #ffaaaa;
+}
+
+.btn-accion-serv.btn-eliminar:hover {
+    background-color: #990000;
+    color: #ffffff;
+    border-color: #cc0000;
+}
+
+/* FORMULARIOS DE MODALES DE SERVICIOS */
+.form-modal-servicio {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 16px;
+    text-align: left;
+}
+
+.grid-dos-campos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.modal-botones-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-secundario-modal {
+    background-color: transparent;
+    border: 1px solid var(--gris-borde);
+    color: var(--beige);
+    padding: 9px 16px;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+
+.btn-secundario-modal:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.btn-primario-modal {
+    background-color: var(--dorado);
+    border: 1px solid var(--dorado-brillante);
+    color: var(--bordo-profundo);
+    font-weight: 700;
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+
+.btn-primario-modal:hover {
+    background-color: var(--dorado-brillante);
+}
+
+@media (max-width: 768px) {
+    .card-estado-barberia {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .cabecera-servicios-admin {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .grid-dos-campos {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* Insignia y estilos para turnos editados por el cliente */
+.badge-editado {
+    background-color: rgba(201, 155, 75, 0.25);
+    color: var(--dorado-brillante);
+    border: 1px solid var(--dorado);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.turno-modificado-admin {
+    border-left: 3px solid var(--dorado) !important;
+}
+
+.modal-bloque-edicion {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px !important;
+    background: rgba(33, 8, 14, 0.7);
+    border: 1px solid var(--dorado);
+    border-radius: 8px;
+    margin-top: 6px;
+}
+
+.etiqueta-modificado-modal {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--dorado-brillante);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.cambio-texto {
+    font-size: 0.9rem;
+    color: var(--beige);
+    font-weight: 600;
+    margin: 2px 0;
+}
+
+.fecha-edicion-texto {
+    font-size: 0.78rem;
+    color: rgba(243, 228, 200, 0.7);
+    display: block;
+    margin-top: 2px;
 }

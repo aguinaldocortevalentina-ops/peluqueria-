@@ -9,7 +9,14 @@
 <body>
     <main class="portada reserva">
         <p class="detalle">RESERVA COMPLETADA</p>
-        <h1>¡Turno confirmado!</h1>
+        {% if mensaje_exito %}
+            <div class="alerta-exito-reserva">
+                <span>✅</span> {{ mensaje_exito }}
+            </div>
+            <h1>Turno modificado correctamente</h1>
+        {% else %}
+            <h1>Turno reservado correctamente</h1>
+        {% endif %}
         <div class="linea-dorada"></div>
         <section class="resumen-turno">
             <p><strong>Cliente</strong><span>{{ turno.cliente_nombre or 'Cliente' }}</span></p>
@@ -22,7 +29,10 @@
             <p><strong>Hora</strong><span>{{ turno.hora }}</span></p>
             <p><strong>Precio</strong><span>${{ "{:,}".format(turno.servicio_precio).replace(",", ".") }}</span></p>
         </section>
-        <a class="boton-principal" href="{{ url_for('inicio') }}">Volver al inicio</a>
+        <div class="navegacion-pasos" style="justify-content: center; gap: 14px;">
+            <a class="boton-secundario" href="{{ url_for('consultar_turno') }}">Mis turnos</a>
+            <a class="boton-principal" href="{{ url_for('inicio') }}" style="margin-top: 0;">Volver al inicio</a>
+        </div>
     </main>
 </body>
 </html>

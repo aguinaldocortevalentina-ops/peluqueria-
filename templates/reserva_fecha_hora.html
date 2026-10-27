@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elegí la fecha y hora | Flama Barber</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script defer src="{{ url_for('static', filename='js/disponibilidad_horarios.js') }}"></script>
 </head>
 <body>
     <main class="portada reserva">
@@ -41,16 +42,48 @@
                    required>
             <small class="ayuda-campo">Ingresá 10 dígitos numéricos (ej: 3512345678).</small>
 
-            <label for="fecha">Fecha</label>
-            <input type="date"
-                   id="fecha"
-                   name="fecha"
-                   min="{{ fecha_minima }}"
-                   value="{{ fecha_seleccionada or fecha_minima }}"
-                   required>
+            <div class="seccion-reserva-dias">
+                <div class="cabecera-dias">
+                    <label class="etiqueta-seccion">Elegí el día</label>
+                    <span class="subtexto-dias">Seleccioná una de las fechas disponibles</span>
+                </div>
 
-            <label>Horario disponible</label>
-            <div class="selector-hora">
+                <div class="aviso-lunes-cerrado">
+                    <span class="icono-aviso">ℹ️</span>
+                    <span>Los lunes la barbería permanece cerrada.</span>
+                </div>
+
+                <div class="selector-dias" id="selectorDias" role="radiogroup" aria-label="Seleccionar día de la reserva">
+                    {% for dia in proximos_dias %}
+                        <label class="dia-opcion {% if dia.cerrado %}dia-cerrado{% endif %} {% if loop.index > 7 %}dia-adicional{% endif %}">
+                            <input type="radio"
+                                   name="fecha"
+                                   value="{{ dia.fecha_str }}"
+                                   {% if dia.cerrado %}disabled{% endif %}
+                                   {% if (fecha_seleccionada or '') == dia.fecha_str and not dia.cerrado %}checked{% endif %}
+                                   required>
+                            <span class="dia-tarjeta">
+                                <span class="dia-nombre">{{ dia.dia_nombre }}</span>
+                                {% if dia.cerrado %}
+                                    <span class="dia-estado-cerrado">CERRADO</span>
+                                {% else %}
+                                    <span class="dia-numero">{{ dia.dia_numero }} {{ dia.mes_nombre }}</span>
+                                {% endif %}
+                            </span>
+                        </label>
+                    {% endfor %}
+                </div>
+
+                {% if proximos_dias|length > 7 %}
+                    <button type="button" class="boton-ver-mas-dias" id="btnToggleDias" aria-expanded="false">
+                        <span id="textoToggleDias">Ver más días disponibles (+7 días)</span>
+                        <span class="flecha-toggle" id="iconoToggleDias">▾</span>
+                    </button>
+                {% endif %}
+            </div>
+
+            <label class="etiqueta-seccion">Horario disponible</label>
+            <div class="selector-hora" data-disponibilidad-url="{{ url_for('disponibilidad_reserva') }}">
                 {% for hora in ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00"] %}
                     <label class="hora-opcion">
                         <input name="hora"
@@ -58,7 +91,10 @@
                                value="{{ hora }}"
                                {% if (hora_seleccionada or '') == hora %}checked{% endif %}
                                required>
-                        <span>{{ hora }}</span>
+                        <span class="hora-boton">
+                            <span class="texto-hora">{{ hora }}</span>
+                            <small class="estado-hora"></small>
+                        </span>
                     </label>
                 {% endfor %}
             </div>
@@ -69,5 +105,39 @@
             </div>
         </form>
     </main>
+
+    <script>
+        const btnToggle = document.getElementById('btnToggleDias');
+        const textoToggle = document.getElementById('textoToggleDias');
+        const diasAdicionales = document.querySelectorAll('.dia-adicional');
+
+        if (btnToggle && diasAdicionales.length > 0) {
+            // Si algún día adicional está seleccionado (por ejemplo al volver de un error), abrir automáticamente
+            const tieneSeleccionAdicional = Array.from(diasAdicionales).some(function(el) {
+                const input = el.querySelector('input[type="radio"]');
+                return input && input.checked;
+            });
+
+            function toggleDias(forzarAbrir) {
+                const abrir = (typeof forzarAbrir === 'boolean') ? forzarAbrir : !btnToggle.classList.contains('abierto');
+                btnToggle.classList.toggle('abierto', abrir);
+                btnToggle.setAttribute('aria-expanded', abrir);
+                diasAdicionales.forEach(function(el) {
+                    el.classList.toggle('mostrar', abrir);
+                });
+                textoToggle.textContent = abrir
+                    ? 'Ver menos días'
+                    : 'Ver más días disponibles (+7 días)';
+            }
+
+            if (tieneSeleccionAdicional) {
+                toggleDias(true);
+            }
+
+            btnToggle.addEventListener('click', function() {
+                toggleDias();
+            });
+        }
+    </script>
 </body>
 </html>

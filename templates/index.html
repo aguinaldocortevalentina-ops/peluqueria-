@@ -6,16 +6,37 @@
     <title>Flama Barber</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
-    <main class="portada">
-        <p class="detalle">BARBERÍA</p>
-        <h1>Flama Barber</h1>
-        <div class="linea-dorada"></div>
-        <p class="mensaje">Estilo, precisión y tradición.</p>
-        <a class="boton-principal" href="{{ url_for('iniciar_reserva') }}">Reservar turno</a>
+<body class="inicio-body">
+    <main class="inicio">
+        <section class="hero-inicio">
+            <p class="detalle">FLAMA BARBER</p>
+            <h1>Tu estilo empieza acá.</h1>
+            <p class="hero-descripcion">
+                Elegí tu peluquero, el servicio que necesitás y reservá tu turno en pocos pasos.
+            </p>
+            {% if barberia_activa %}
+                <div class="botones-hero-grupo">
+                    <a class="boton-principal boton-reserva" href="{{ url_for('iniciar_reserva') }}">Reservar turno</a>
+                    <a class="boton-secundario boton-consultar-turno" href="{{ url_for('consultar_turno') }}">Consultar o modificar mi turno</a>
+                </div>
 
-        <section class="servicios">
-            <h2>Nuestros servicios</h2>
+                <div class="pasos-inicio" aria-label="Cómo reservar">
+                    <div><span>01</span><p>Elegí tu peluquero</p></div>
+                    <div><span>02</span><p>Seleccioná tu servicio</p></div>
+                    <div><span>03</span><p>Definí fecha y hora</p></div>
+                </div>
+            {% else %}
+                <div class="aviso-barberia-cerrada-inicio">
+                    <div class="icono-cerrado-grande">🔴</div>
+                    <h3>En este momento la barbería se encuentra cerrada.</h3>
+                    <p class="mensaje-cerrado-sub">Disculpá las molestias. Volvé a visitarnos más tarde.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <section class="servicios servicios-inicio">
+            <p class="detalle">SERVICIOS</p>
+            <h2>Hecho a tu medida</h2>
             <ul>
                 {% for servicio in servicios %}
                     <li>
@@ -25,9 +46,10 @@
                 {% endfor %}
             </ul>
         </section>
-        <p style="margin-top: 28px; font-size: 0.85rem;">
-            <a href="{{ url_for('admin_agenda') }}" style="color: var(--dorado); text-decoration: none; opacity: 0.85;">🔐 Acceso de Administrador</a>
-        </p>
+
+        <footer class="pie-inicio">
+            <a href="{{ url_for('admin_agenda') }}">Acceso de administración</a>
+        </footer>
     </main>
 </body>
 </html>

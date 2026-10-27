@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmar Cambio de Turno | Flama Barber</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="portada reserva">
+        <p class="detalle">PASO FINAL DE MODIFICACIÓN</p>
+        <h1>Confirmar cambio</h1>
+        <p class="mensaje">Revisá los datos antes de aplicar la modificación en tu turno.</p>
+
+        <div class="comparacion-turnos-contenedor">
+            <div class="tarjeta-comparacion turno-previo">
+                <span class="badge-comparacion anterior">TURNO ACTUAL</span>
+                <h3>{{ turno.fecha }} - {{ turno.hora }} hs</h3>
+                <p>Peluquero: <strong>{{ turno.peluquero_nombre }}</strong></p>
+                <p>Servicio: <strong>{{ turno.servicio_nombre }}</strong></p>
+            </div>
+
+            <div class="icono-flecha-cambio">➔</div>
+
+            <div class="tarjeta-comparacion turno-nuevo">
+                <span class="badge-comparacion nuevo">NUEVO TURNO</span>
+                <h3>{{ nueva_fecha_formateada }} - {{ nueva_hora }} hs</h3>
+                <p>Peluquero: <strong>{{ turno.peluquero_nombre }}</strong></p>
+                <p>Servicio: <strong>{{ turno.servicio_nombre }}</strong></p>
+            </div>
+        </div>
+
+        <form method="post" action="{{ url_for('guardar_edicion_turno', turno_id=turno.id) }}" class="formulario-reserva" style="margin-top: 24px;">
+            <input type="hidden" name="nueva_fecha" value="{{ nueva_fecha_formateada }}">
+            <input type="hidden" name="nueva_hora" value="{{ nueva_hora }}">
+            <input type="hidden" name="fecha_iso" value="{{ nueva_fecha_iso }}">
+
+            <div class="navegacion-pasos">
+                <a class="boton-secundario" href="{{ url_for('consultar_turno') }}">Cancelar</a>
+                <button type="submit" class="boton-principal" style="margin-top: 0;">Confirmar cambio</button>
+            </div>
+        </form>
+    </main>
+</body>
+</html>
